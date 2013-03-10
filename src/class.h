@@ -7,7 +7,17 @@
 #include <stdlib.h>
 
 enum cpool_t {
-	STRING = 1
+	STRING_UTF8 = 1, /* occupies 2+x bytes */
+	INTEGER = 3,
+	FLOAT = 4,
+	LONG = 5,
+	DOUBLE = 6,
+	CLASS = 7,
+	STRING = 8,
+	FIELD = 9,
+	METHOD = 10,
+	INTERFACE_METHOD = 11,
+	NAME = 12
 };
 
 /*
