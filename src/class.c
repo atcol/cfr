@@ -7,24 +7,25 @@
 #include <stdlib.h>
 #include <string.h>
 
-Class read_class(FILE *class_file) {
-	uint16_t minorVersion;  	//= malloc(sizeof(uint16_t));
-	uint16_t majorVersion; 		// = malloc(sizeof(uint16_t));
-	uint16_t constPoolSize; 	//= malloc(sizeof(uint16_t));
+Class read_class(const ClassFile class_file) {
+	uint16_t minor_version;
+	uint16_t major_version;
+	uint16_t const_pool_size;
 
-	fread(&minorVersion,  sizeof(uint16_t), 1, class_file);
-	fread(&majorVersion,  sizeof(uint16_t), 1, class_file);
-	fread(&constPoolSize, sizeof(uint16_t), 1, class_file);
+	fread(&minor_version,  sizeof(uint16_t), 1, class_file.file);
+	fread(&major_version,  sizeof(uint16_t), 1, class_file.file);
+	fread(&const_pool_size, sizeof(uint16_t), 1, class_file.file);
 	
 	// convert the big endian ints to host equivalents
-	minorVersion = be16toh(minorVersion);
-	majorVersion = be16toh(majorVersion);
-	constPoolSize = be16toh(constPoolSize);
+	minor_version = be16toh(minor_version);
+	major_version = be16toh(major_version);
+	const_pool_size = be16toh(const_pool_size);
 
 	Class class = {
-		minorVersion,
-		majorVersion,
-		constPoolSize
+		class_file.file_name,
+		minor_version,
+		major_version,
+		const_pool_size
 	};
 
 	return class;
@@ -36,9 +37,9 @@ bool is_class(FILE *class_file) {
 	return num_read == 1 && magicNum == 0xbebafeca; // big endian
 }
 
-void print_class(FILE *stream, const char *name, const Class class) {
-	fprintf(stream, "File: %s\n", name);
-	fprintf(stream, "Minor number: %u \n", class.minorVersion);
-	fprintf(stream, "Major number: %u \n", class.majorVersion);
-	fprintf(stream, "Constant pool size: %u \n", class.constPoolSize);
+void print_class(FILE *stream, const Class class) {
+	fprintf(stream, "File: %s\n", class.file_name);
+	fprintf(stream, "Minor number: %u \n", class.minor_version);
+	fprintf(stream, "Major number: %u \n", class.major_version);
+	fprintf(stream, "Constant pool size: %u \n", class.const_pool_size);
 }
