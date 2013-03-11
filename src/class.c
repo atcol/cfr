@@ -34,7 +34,7 @@ Class read_class(const ClassFile class_file) {
 bool is_class(FILE *class_file) {
 	uint32_t magicNum;
 	size_t num_read = fread(&magicNum, sizeof(uint32_t), 1, class_file);
-	return num_read == 1 && magicNum == 0xbebafeca; // convert big endian
+	return num_read == 1 && be32toh(magicNum) == 0xcafebabe;
 }
 
 void print_class(FILE *stream, const Class class) {
