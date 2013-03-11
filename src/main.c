@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int main(const int argc, const char *args[]) {
+int main(int argc, char *args[]) {
 	if (argc == 1) {
 		printf("Please pass at least 1 .class file to open");
 		exit(EXIT_FAILURE);
@@ -15,7 +15,7 @@ int main(const int argc, const char *args[]) {
 
 	int i;
 	for (i = 1; i < argc; i++) {
-		const char *file_name = args[i];
+		char *file_name = args[i];
 		FILE *file = fopen(file_name, "r");
 
 		if (!file) {
@@ -24,7 +24,7 @@ int main(const int argc, const char *args[]) {
 		}
 
 		if (!is_class(file)) {
-			printf("Skipping '%s', its magic number isn't 0xbebafeca\n", file_name);
+			printf("Skipping '%s', its magic number isn't 0xcafebabe\n", file_name);
 			continue;
 		}
 

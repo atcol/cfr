@@ -21,26 +21,26 @@ enum cpool_t {
 };
 
 /*
- * A wrapper for FILE structs that also holds its file name.
+ * An immutable wrapper for FILE structs that also holds its file name.
  */
 typedef struct {
-	const char *file_name;
+	char *file_name;
 	FILE *file;
 } ClassFile;
 
 /* The .class file structure */
 typedef struct {
-	const char *file_name;
-	const uint16_t minor_version;
-	const uint16_t major_version;
-	const uint16_t const_pool_size;
+	char *file_name;
+	uint16_t minor_version;
+	uint16_t major_version;
+	uint16_t const_pool_size;
 } Class;
 
 /* An item in the Constant Pool */
 typedef struct {
-	const uint8_t type;
-	const int len;
-	const union {
+	uint8_t type;
+	int len;
+	union {
 		char *string;
 	} value;
 } CPItem;
