@@ -24,7 +24,7 @@ int main(int argc, char *args[]) {
 		}
 
 		if (!is_class(file)) {
-			printf("Skipping '%s', its magic number isn't 0xcafebabe\n", file_name);
+			printf("Skipping '%s': not a valid class file\n", file_name);
 			continue;
 		}
 
