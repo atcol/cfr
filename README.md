@@ -4,7 +4,7 @@ Class File Reader - a Java class file parser
 
 ### Introduction
 
-This program reads Java class files and prints information such as the minor and major version, constant pool table and so-on to stdout.
+This program reads Java class files and reports on the class and its structure.
 
 ### Build
 
