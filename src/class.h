@@ -21,7 +21,7 @@ enum cpool_t {
 };
 
 /*
- * An immutable wrapper for FILE structs that also holds its file name.
+ * A wrapper for FILE structs that also holds the file name.
  */
 typedef struct {
 	char *file_name;
