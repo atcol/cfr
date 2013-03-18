@@ -34,6 +34,7 @@ typedef struct {
 	uint16_t minor_version;
 	uint16_t major_version;
 	uint16_t const_pool_size;
+	uint32_t const_table_size_bytes;
 } Class;
 
 /* An item in the Constant Pool */
