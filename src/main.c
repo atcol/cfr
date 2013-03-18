@@ -23,6 +23,7 @@ int main(int argc, char *args[]) {
 			continue;
 		}
 
+		// Check the file header for .class nature
 		if (!is_class(file)) {
 			printf("Skipping '%s': not a valid class file\n", file_name);
 			continue;
