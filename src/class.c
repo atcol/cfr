@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include "uthash.h"
 
 Class read_class(const ClassFile class_file) {
 	uint16_t minor_version;
@@ -21,6 +22,12 @@ Class read_class(const ClassFile class_file) {
 	major_version = be16toh(major_version);
 	const_pool_size = be16toh(const_pool_size);
 
+	Class *class = (Class *) malloc(sizeof(Class));
+	class->file_name = class_file.file_name;
+	class->minor_version = minor_version;
+	class->major_version = major_version;
+	class->const_pool_size = const_pool_size;
+
 	uint32_t table_size_bytes = 0;
 	int i;
 	char tag_byte;
@@ -30,7 +37,7 @@ Class read_class(const ClassFile class_file) {
 	double dbl;
 	uint16_t uint16;
 	char *str;
-	UT_hash_table pool = {}
+	Method *method;
 	
 	for (i = 0; i < const_pool_size; i++) {
 		fread(&tag_byte, sizeof(char), 1, class_file.file);
@@ -92,11 +99,15 @@ Class read_class(const ClassFile class_file) {
 				table_size_bytes += 4;
 				break;
 			case 10: // Method reference: two uint16s within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
-				fread(&uint16, sizeof(uint16), 1, class_file.file);
-				printf("Method uint16 1: %d\n", be16toh(uint16));
-				fread(&uint16, sizeof(uint16), 1, class_file.file);
-				printf("Method uint16 2: %d\n", be16toh(uint16));
+				method = (Method *) malloc(sizeof(Method));
+				fread(&method->class_idx, sizeof(uint16), 1, class_file.file);
+				method->class_idx = be16toh(method->class_idx);
+				fread(&method->name, sizeof(uint16), 1, class_file.file);
+				method->name = be16toh(method->name);
+				printf("Method uint16 1: %d\n", method->class_idx);
+				printf("Method uint16 2: %d\n", method->name);
 				table_size_bytes += 4;
+				HASH_ADD_INT(class->methods, id, method);
 				break;
 			case 11: // Interface method reference: 2 uint16 within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
 				fread(&uint16, sizeof(uint16), 1, class_file.file);
@@ -117,16 +128,7 @@ Class read_class(const ClassFile class_file) {
 
 	printf("Table size: %d\n", table_size_bytes);
 
-	Class class = {
-		class_file.file_name,
-		minor_version,
-		major_version,
-		const_pool_size,
-		table_size_bytes,
-		pool
-	};
-
-	return class;
+	return *class;
 }
 
 bool is_class(FILE *class_file) {
@@ -141,4 +143,9 @@ void print_class(FILE *stream, const Class class) {
 	fprintf(stream, "Major number: %u \n", class.major_version);
 	fprintf(stream, "Constant pool size: %u \n", class.const_pool_size);
 	fprintf(stream, "Constant table size: %ub \n", class.pool_size_bytes);
+	fprintf(stream, "Printing %d methods...\n", HASH_COUNT(class.methods));
+	Method *m;
+	for (m = class.methods; m != NULL; m = m->hh.next) {
+		fprintf(stream, "Method class/name: %d/%d\n", m->class_idx, m->name);
+	}
 }
