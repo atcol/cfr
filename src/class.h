@@ -20,9 +20,7 @@ enum cpool_t {
 	NAME 		= 12 /* Name and type descriptor: 2 indexes to UTF-8 strings, the first representing a name and the second a specially encoded type descriptor. */
 };
 
-/*
- * A wrapper for FILE structs that also holds the file name.
- */
+/* A wrapper for FILE structs that also holds the file name.  */
 typedef struct {
 	char *file_name;
 	FILE *file;
@@ -46,19 +44,13 @@ typedef struct {
 	} value;
 } CPItem;
 
-/*
- * Return true if class_file's first four bytes match 0xbebafeca.
- */
+/* Return true if class_file's first four bytes match 0xbebafeca. */
 bool is_class(FILE *class_file);
 
-/*
- * Parse the given class file into a Class struct.
- */
+/* Parse the given class file into a Class struct. */
 Class read_class(const ClassFile class_file);
 
-/*
- * Write the name and class stats/contents to the given stream.
- */
+/* Write the name and class stats/contents to the given stream. */
 void print_class(FILE *stream, const Class class);
 
 #endif //CLASS_H__
