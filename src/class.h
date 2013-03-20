@@ -32,7 +32,8 @@ typedef struct {
 	uint16_t minor_version;
 	uint16_t major_version;
 	uint16_t const_pool_size;
-	uint32_t const_table_size_bytes;
+	uint32_t pool_size_bytes;
+	UT_hash_table pool;
 } Class;
 
 /* An item in the Constant Pool */
@@ -44,7 +45,7 @@ typedef struct {
 	} value;
 } CPItem;
 
-/* Return true if class_file's first four bytes match 0xbebafeca. */
+/* Return true if class_file's first four bytes match 0xcafebabe. */
 bool is_class(FILE *class_file);
 
 /* Parse the given class file into a Class struct. */
