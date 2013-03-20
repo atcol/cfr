@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include "uthash.h"
 
 enum cpool_t {
 	STRING_UTF8	= 1, /* occupies 2+x bytes */
@@ -33,17 +34,15 @@ typedef struct {
 	uint16_t major_version;
 	uint16_t const_pool_size;
 	uint32_t pool_size_bytes;
-	UT_hash_table pool;
+	UT_hash_handle hh;
 } Class;
 
-/* An item in the Constant Pool */
 typedef struct {
-	uint8_t type;
-	int len;
-	union {
-		char *string;
-	} value;
-} CPItem;
+	int id;
+	uint16_t class_idx; // class reference
+	uint16_t name;
+	UT_hash_handle hh;
+} Method;
 
 /* Return true if class_file's first four bytes match 0xcafebabe. */
 bool is_class(FILE *class_file);
