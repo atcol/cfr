@@ -27,22 +27,46 @@ typedef struct {
 	FILE *file;
 } ClassFile;
 
-/* The .class file structure */
+typedef struct {
+	int id;
+	uint16_t class_idx; // class reference
+	uint16_t name; // name and type ref
+	UT_hash_handle hh;
+} Method;
+
+typedef struct {
+	int id;
+	UT_hash_handle hh;
+} Interface;
+
+typedef struct {
+	int id;
+	UT_hash_handle hh;
+} Field;
+
+typedef struct {
+	int id;
+	UT_hash_handle hh;
+} Attribute;
+
+/* The .class structure */
 typedef struct {
 	char *file_name;
 	uint16_t minor_version;
 	uint16_t major_version;
 	uint16_t const_pool_size;
 	uint32_t pool_size_bytes;
-	UT_hash_handle hh;
+	uint16_t this_class;
+	uint16_t super_class;
+	uint16_t interface_count;
+	Interface *interfaces;
+	uint16_t field_count;
+	Field *fields;
+	uint16_t methods_count;
+	Method *methods;
+	uint16_t attributes_count;
+	Attribute *attributes;
 } Class;
-
-typedef struct {
-	int id;
-	uint16_t class_idx; // class reference
-	uint16_t name;
-	UT_hash_handle hh;
-} Method;
 
 /* Return true if class_file's first four bytes match 0xcafebabe. */
 bool is_class(FILE *class_file);
