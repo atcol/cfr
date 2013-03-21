@@ -21,37 +21,19 @@ enum cpool_t {
 	NAME            = 12 /* Name and type descriptor: 2 indexes to UTF-8 strings, the first representing a name and the second a specially encoded type descriptor. */
 };
 
-typedef struct {
-	int id;
-	uint16_t class_idx;
-	uint16_t name;
-	UT_hash_handle hh;
-} Attribute;
-
 /* A wrapper for FILE structs that also holds the file name.  */
 typedef struct {
 	char *file_name;
 	FILE *file;
 } ClassFile;
 
-typedef struct {
-	int id;
-	uint16_t class_idx; // class reference
-	uint16_t name; // name and type ref
-	UT_hash_handle hh;
-} Method;
-
-typedef struct {
-	int id;
-	UT_hash_handle hh;
-} Interface;
-
+/* Wraps references to an item in the constant pool */
 typedef struct {
 	int id;
 	uint16_t class_idx;
-	uint16_t name;
+	uint16_t name_idx;
 	UT_hash_handle hh;
-} Field;
+} Ref;
 
 typedef struct {
 	int id;
@@ -62,6 +44,7 @@ typedef struct {
 typedef struct {
 	int id;
 	uint8_t tag; // the tag byte
+	char *label;
 	union {
 		String string;
 		float flt;
@@ -85,13 +68,13 @@ typedef struct {
 	uint16_t this_class;
 	uint16_t super_class;
 	uint16_t interface_count;
-	Interface *interfaces;
+	Ref *interfaces;
 	uint16_t field_count;
-	Field *fields;
+	Ref *fields;
 	uint16_t method_count;
-	Method *methods;
+	Ref *methods;
 	uint16_t attribute_count;
-	Attribute *attributes;
+	Ref *attributes;
 } Class;
 
 /* Return true if class_file's first four bytes match 0xcafebabe. */

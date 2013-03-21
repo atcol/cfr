@@ -30,6 +30,7 @@ Class read_class(const ClassFile class_file) {
 
 	int field_id = 0;
 	int meth_id = 0;
+	int ifacemeth_id = 0;
 	uint32_t table_size_bytes = 0;
 	int i;
 	char tag_byte;
@@ -39,8 +40,8 @@ Class read_class(const ClassFile class_file) {
 	double dbl;
 	uint16_t uint16;
 	char *str;
-	Method *method;
-	Field *field;
+	Ref *method;
+	Ref *field;
 	
 	for (i = 0; i < const_pool_size; i++) {
 		fread(&tag_byte, sizeof(char), 1, class_file.file);
@@ -99,31 +100,33 @@ Class read_class(const ClassFile class_file) {
 				table_size_bytes += 2;
 				break;
 			case FIELD: // Field reference: two uint16 within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
-				field = (Field *) malloc(sizeof(Field));
+				field = (Ref *) malloc(sizeof(Ref));
 				fread(&field->class_idx, sizeof(uint16), 1, class_file.file);
-				fread(&field->name, sizeof(uint16), 1, class_file.file);
+				fread(&field->name_idx, sizeof(uint16), 1, class_file.file);
 				field->id = ++field_id;
 				field->class_idx = be16toh(field->class_idx);
-				field->name = be16toh(field->name);
+				field->name_idx = be16toh(field->name_idx);
 				HASH_ADD_INT(class->fields, id, field);
 				table_size_bytes += 4;
 				break;
 			case METHOD: // Method reference: two uint16s within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
-				method = (Method *) malloc(sizeof(Method));
+				method = (Ref *) malloc(sizeof(Ref));
 				fread(&method->class_idx, sizeof(uint16), 1, class_file.file);
-				fread(&method->name, sizeof(uint16), 1, class_file.file);
+				fread(&method->name_idx, sizeof(uint16), 1, class_file.file);
 				method->id = ++meth_id;
 				method->class_idx = be16toh(method->class_idx);
-				method->name = be16toh(method->name);
+				method->name_idx = be16toh(method->name_idx);
 				table_size_bytes += 4;
 				HASH_ADD_INT(class->methods, id, method);
 				break;
 			case INTERFACE_METHOD: // Interface method reference: 2 uint16 within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
-				method = (Method *) malloc(sizeof(Method));
+				method = (Ref *) malloc(sizeof(Ref));
 				fread(&method->class_idx, sizeof(uint16), 1, class_file.file);
 				fread(&method->name_idx, sizeof(uint16), 1, class_file.file);
-				//printf("Interface uint16 1: %d\n", be16toh(method->class_idx));
-				//printf("Interface uint16 2: %d\n", be16toh(method->name));
+				method->id = ++ifacemeth_id;
+				method->class_idx = be16toh(method->class_idx);
+				method->name_idx = be16toh(method->name_idx);
+				HASH_ADD_INT(class->methods, id, method);
 				table_size_bytes += 4;
 				break;
 			case NAME: // Name and type descriptor: 2 uint16 to UTF-8 strings, 1st representing a name (identifier), 2nd a specially encoded type descriptor
@@ -186,14 +189,14 @@ void print_class(FILE *stream, const Class class) {
 	}
 
 	fprintf(stream, "Printing %d methods...\n", HASH_COUNT(class.methods));
-	Method *m;
+	Ref *m;
 	for (m = class.methods; m != NULL; m = m->hh.next) {
-		fprintf(stream, "Method class/name: %d/%d\n", m->class_idx, m->name);
+		fprintf(stream, "Method class/name: %d/%d\n", m->class_idx, m->name_idx);
 	}
 	fprintf(stream, "Printing %d fields...\n", HASH_COUNT(class.fields));
-	Field *f;
+	Ref *f;
 	for (f = class.fields; f != NULL; f = f->hh.next) {
-		fprintf(stream, "Field class/name: %d/%d\n", f->class_idx, f->name);
+		fprintf(stream, "Field class/name: %d/%d\n", f->class_idx, f->name_idx);
 	}
 }
 
