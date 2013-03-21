@@ -28,6 +28,8 @@ Class read_class(const ClassFile class_file) {
 	class->major_version = major_version;
 	class->const_pool_size = const_pool_size;
 
+	int field_id = 0;
+	int meth_id = 0;
 	uint32_t table_size_bytes = 0;
 	int i;
 	char tag_byte;
@@ -59,69 +61,69 @@ Class read_class(const ClassFile class_file) {
 				s.value = str;
 				item->value.string = s;
 				table_size_bytes += 2 + uint16 + 1;
+				HASH_ADD_INT(class->items, id, item);
 				//FIXME: read the UTF encoding in the string
 				break;
 			case INTEGER: // Integer: a signed 32-bit two's complement number in big-endian format
 				fread(&int32, sizeof(int32), 1, class_file.file);
 				item->value.integer = be32toh(int32);
 				table_size_bytes += 4;
+				HASH_ADD_INT(class->items, id, item);
 				break;
 			case FLOAT: // Float: a 32-bit single-precision IEEE 754 floating-point number
 				fread(&flt, sizeof(flt), 1, class_file.file);
-				//printf("float: %f\n", flt);
 				item->value.flt = flt;
 				table_size_bytes += 4;
+				HASH_ADD_INT(class->items, id, item);
 				break;
 			case LONG: // Long: a signed 64-bit two's complement number in big-endian format (takes two slots in the constant pool table)
 				fread(&lng, sizeof(lng), 1, class_file.file);
 				item->value.lng = be64toh(lng);
-				//printf("long: %ld\n", be64toh(lng));
 				table_size_bytes += 8;
+				HASH_ADD_INT(class->items, id, item);
 				break;
 			case DOUBLE: // Double: a 64-bit double-precision IEEE 754 floating-point number (takes two slots in the constant pool table)
 				fread(&dbl, sizeof(dbl), 1, class_file.file);
 				item->value.dbl = dbl;
 				table_size_bytes += 8;
+				HASH_ADD_INT(class->items, id, item);
 				break;
 			case CLASS: // Class reference: an uint16 within the constant pool to a UTF-8 string containing the fully qualified class name
 				fread(&uint16, sizeof(uint16), 1, class_file.file);
 				item->value.class_idx = be16toh(uint16);
-				//printf("Class uint16: %d\n", be16toh(uint16));
 				table_size_bytes += 2;
 				break;
 			case STRING: // String reference: an uint16 within the constant pool to a UTF-8 string
 				fread(&uint16, sizeof(uint16), 1, class_file.file);
 				item->value.class_idx = be16toh(uint16);
-				//printf("String uint16: %d\n", be16toh(uint16));
 				table_size_bytes += 2;
 				break;
 			case FIELD: // Field reference: two uint16 within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
 				field = (Field *) malloc(sizeof(Field));
 				fread(&field->class_idx, sizeof(uint16), 1, class_file.file);
 				fread(&field->name, sizeof(uint16), 1, class_file.file);
+				field->id = ++field_id;
 				field->class_idx = be16toh(field->class_idx);
 				field->name = be16toh(field->name);
-				//printf("Field class: %d\n", field->class_idx);
-				//printf("Field name: %d\n", field->name);
+				HASH_ADD_INT(class->fields, id, field);
 				table_size_bytes += 4;
-				//HASH_ADD_INT(class->fields, id, field);
 				break;
 			case METHOD: // Method reference: two uint16s within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
 				method = (Method *) malloc(sizeof(Method));
 				fread(&method->class_idx, sizeof(uint16), 1, class_file.file);
-				method->class_idx = be16toh(method->class_idx);
 				fread(&method->name, sizeof(uint16), 1, class_file.file);
+				method->id = ++meth_id;
+				method->class_idx = be16toh(method->class_idx);
 				method->name = be16toh(method->name);
-				printf("Method uint16 1: %d\n", method->class_idx);
-				printf("Method uint16 2: %d\n", method->name);
 				table_size_bytes += 4;
-				//HASH_ADD_INT(class->methods, id, method);
+				HASH_ADD_INT(class->methods, id, method);
 				break;
 			case INTERFACE_METHOD: // Interface method reference: 2 uint16 within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
-				fread(&uint16, sizeof(uint16), 1, class_file.file);
-				printf("Interface uint16 1: %d\n", be16toh(uint16));
-				fread(&uint16, sizeof(uint16), 1, class_file.file);
-				printf("Interface uint16 2: %d\n", be16toh(uint16));
+				method = (Method *) malloc(sizeof(Method));
+				fread(&method->class_idx, sizeof(uint16), 1, class_file.file);
+				fread(&method->name_idx, sizeof(uint16), 1, class_file.file);
+				//printf("Interface uint16 1: %d\n", be16toh(method->class_idx));
+				//printf("Interface uint16 2: %d\n", be16toh(method->name));
 				table_size_bytes += 4;
 				break;
 			case NAME: // Name and type descriptor: 2 uint16 to UTF-8 strings, 1st representing a name (identifier), 2nd a specially encoded type descriptor
@@ -132,7 +134,6 @@ Class read_class(const ClassFile class_file) {
 				table_size_bytes += 4;
 				break;
 		}
-		HASH_ADD_INT(class->items, id, item);
 	}
 
 	class->pool_size_bytes = table_size_bytes;
@@ -173,6 +174,10 @@ void print_class(FILE *stream, const Class class) {
 		} else if (s->tag == CLASS) {
 			fprintf(stream, "%d\n", s->value.class_idx);
 		} else if (s->tag == STRING) {
+			fprintf(stream, "%d\n", s->value.class_idx);
+		} else if (s->tag == FIELD) {
+			fprintf(stream, "%d\n", s->value.class_idx);
+		} else if (s->tag == METHOD) {
 			fprintf(stream, "%d\n", s->value.class_idx);
 		} else {
 			fprintf(stream, "Don't know how to print item # %d of type %d\n", i, s->tag);
