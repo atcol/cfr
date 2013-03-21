@@ -38,28 +38,29 @@ Class read_class(const ClassFile class_file) {
 	uint16_t uint16;
 	char *str;
 	Method *method;
+	Field *field;
 	
 	for (i = 0; i < const_pool_size; i++) {
 		fread(&tag_byte, sizeof(char), 1, class_file.file);
 		printf("Tag byte: %d\n", tag_byte);
+		Item *item = (Item *) malloc(sizeof(Item));
+		item->tag = tag_byte;
+
+		// Populate item based on tag_byte
 		switch (tag_byte) {
 			case 1: // String prefixed by a 16-bit number (type u2) indicating the number of bytes in the encoded string which immediately follows
 				fread(&uint16, sizeof(uint16), 1, class_file.file);
 				uint16 = be16toh(uint16);
-				printf("String size (bytes): %d\n", uint16);
-				str = malloc(sizeof(char) * uint16);
-				char x, y;
-				int i, j;
-				for (i = 0, j = 0; i < uint16; i += 2, j++) { // read 2 at a time
-					fread(&x, sizeof(char), 1, class_file.file);
-					fread(&y, sizeof(char), 1, class_file.file);
-					str[j] = x;
-					j++;
-					str[j] = y;
-				}
-				printf("String: %s\n", str);
-				free(str);
-				table_size_bytes += 2 + uint16;
+				str = malloc(sizeof(char) * uint16 + 1);
+				fread(str, sizeof(char), uint16, class_file.file);
+				str[uint16] = '\0';
+				String s;
+				s.length = uint16;
+				s.value = str;
+				item->value.string = s;
+				HASH_ADD_INT(class->items, id, item);
+				table_size_bytes += 2 + uint16 + 1;
+				//FIXME: read the UTF encoding in the string
 				break;
 			case 3: // Integer: a signed 32-bit two's complement number in big-endian format
 				fread(&int32, sizeof(int32), 1, class_file.file);
@@ -91,12 +92,16 @@ Class read_class(const ClassFile class_file) {
 				printf("String uint16: %d\n", be16toh(uint16));
 				table_size_bytes += 2;
 				break;
-			case 9: // Field reference: two uint16es within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
-				fread(&uint16, sizeof(uint16), 1, class_file.file);
-				printf("Field uint16 1: %d\n", be16toh(uint16));
-				fread(&uint16, sizeof(uint16), 1, class_file.file);
-				printf("Field uint16 2: %d\n", be16toh(uint16));
+			case 9: // Field reference: two uint16 within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
+				field = (Field *) malloc(sizeof(Field));
+				fread(&field->class_idx, sizeof(uint16), 1, class_file.file);
+				fread(&field->name, sizeof(uint16), 1, class_file.file);
+				field->class_idx = be16toh(field->class_idx);
+				field->name = be16toh(field->name);
+				printf("Field class: %d\n", field->class_idx);
+				printf("Field name: %d\n", field->name);
 				table_size_bytes += 4;
+				HASH_ADD_INT(class->fields, id, field);
 				break;
 			case 10: // Method reference: two uint16s within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
 				method = (Method *) malloc(sizeof(Method));
@@ -143,9 +148,28 @@ void print_class(FILE *stream, const Class class) {
 	fprintf(stream, "Major number: %u \n", class.major_version);
 	fprintf(stream, "Constant pool size: %u \n", class.const_pool_size);
 	fprintf(stream, "Constant table size: %ub \n", class.pool_size_bytes);
+
+	fprintf(stream, "Printing constant pool of %d items...\n", HASH_COUNT(class.items));
+
+	Item *s;
+	int i = 1;
+	for (s = class.items; s != NULL; s = s->hh.next) {
+		if (s->tag == 1) {
+			fprintf(stream, "Item %d: %s\n", i, s->value.string.value);
+		} else {
+			fprintf(stream, "Don't know how to print item # %d\n", i);
+		}
+		i++;
+	}
+
 	fprintf(stream, "Printing %d methods...\n", HASH_COUNT(class.methods));
 	Method *m;
 	for (m = class.methods; m != NULL; m = m->hh.next) {
 		fprintf(stream, "Method class/name: %d/%d\n", m->class_idx, m->name);
+	}
+	fprintf(stream, "Printing %d fields...\n", HASH_COUNT(class.fields));
+	Field *f;
+	for (f = class.fields; f != NULL; f = f->hh.next) {
+		fprintf(stream, "Field class/name: %d/%d\n", f->class_idx, f->name);
 	}
 }
