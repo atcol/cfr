@@ -7,6 +7,27 @@
 #include <stdlib.h>
 #include "uthash.h"
 
+enum cpool_t {
+	STRING_UTF8     = 1, /* occupies 2+x bytes */
+	INTEGER         = 3, /* 32bit two's-compliment big endian int */
+	FLOAT           = 4, /* 32-bit single precision */
+	LONG            = 5, /* Long: a signed 64-bit two's complement number in big-endian format (takes two slots in the constant pool table) */
+	DOUBLE          = 6, /* Double: a 64-bit double-precision IEEE 754 floating-point number (takes two slots in the constant pool table) */
+	CLASS           = 7, /* Class reference: an index within the constant pool to a UTF-8 string containing the fully qualified class name (in internal format) */
+	STRING          = 8, /* String reference: an index within the constant pool to a UTF-8 string */
+	FIELD           = 9, /* Field reference: two indexes within the constant pool, the first pointing to a Class reference, the second to a Name and Type descriptor. */
+	METHOD          = 10, /* Method reference: two indexes within the constant pool, the first pointing to a Class reference, the second to a Name and Type descriptor. */
+	INTERFACE_METHOD = 11, /* Interface method reference: two indexes within the constant pool, the first pointing to a Class reference, the second to a Name and Type descriptor. */
+	NAME            = 12 /* Name and type descriptor: 2 indexes to UTF-8 strings, the first representing a name and the second a specially encoded type descriptor. */
+};
+
+typedef struct {
+	int id;
+	uint16_t class_idx;
+	uint16_t name;
+	UT_hash_handle hh;
+} Attribute;
+
 /* A wrapper for FILE structs that also holds the file name.  */
 typedef struct {
 	char *file_name;
@@ -34,13 +55,6 @@ typedef struct {
 
 typedef struct {
 	int id;
-	uint16_t class_idx;
-	uint16_t name;
-	UT_hash_handle hh;
-} Attribute;
-
-typedef struct {
-	int id;
 	int length;
 	char *value;
 } String;
@@ -50,9 +64,12 @@ typedef struct {
 	uint8_t tag; // the tag byte
 	union {
 		String string;
+		float flt;
 		double dbl;
 		long lng;
-		int integer;
+		int32_t integer;
+		uint16_t class_idx;
+		uint16_t name_idx;
 	} value;
 	UT_hash_handle hh;
 } Item;
@@ -85,5 +102,8 @@ Class read_class(const ClassFile class_file);
 
 /* Write the name and class stats/contents to the given stream. */
 void print_class(FILE *stream, const Class class);
+
+/* Convert a tag byte to a label */
+char *tagtostr(uint8_t tag);
 
 #endif //CLASS_H__
