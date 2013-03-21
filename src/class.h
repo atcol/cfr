@@ -29,20 +29,19 @@ typedef struct {
 
 /* Wraps references to an item in the constant pool */
 typedef struct {
-	int id;
+	uint16_t id;
 	uint16_t class_idx;
 	uint16_t name_idx;
 	UT_hash_handle hh;
 } Ref;
 
 typedef struct {
-	int id;
 	int length;
 	char *value;
 } String;
 
 typedef struct {
-	int id;
+	uint16_t id;
 	uint8_t tag; // the tag byte
 	char *label;
 	union {

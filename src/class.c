@@ -28,6 +28,7 @@ Class read_class(const ClassFile class_file) {
 	class->major_version = major_version;
 	class->const_pool_size = const_pool_size;
 
+	uint16_t item_id = 0;
 	int field_id = 0;
 	int meth_id = 0;
 	int ifacemeth_id = 0;
@@ -43,15 +44,15 @@ Class read_class(const ClassFile class_file) {
 	Ref *method;
 	Ref *field;
 	
-	for (i = 0; i < const_pool_size; i++) {
+	for (i = 1; i < const_pool_size; i++) {
 		fread(&tag_byte, sizeof(char), 1, class_file.file);
 		printf("Tag byte: %d\n", tag_byte);
 		Item *item = (Item *) malloc(sizeof(Item));
 		item->tag = tag_byte;
-		item->id = i + 1;
 		// Populate item based on tag_byte
 		switch (tag_byte) {
 			case STRING_UTF8: // String prefixed by a 16-bit number (type u2) indicating the number of bytes in the encoded string which immediately follows
+				//FIXME: read the UTF encoding in the string
 				fread(&uint16, sizeof(uint16), 1, class_file.file);
 				uint16 = be16toh(uint16);
 				str = malloc(sizeof(char) * uint16 + 1);
@@ -60,44 +61,66 @@ Class read_class(const ClassFile class_file) {
 				String s;
 				s.length = uint16;
 				s.value = str;
+				item->id = ++item_id;
 				item->value.string = s;
+				item->label = "String";
 				table_size_bytes += 2 + uint16 + 1;
 				HASH_ADD_INT(class->items, id, item);
-				//FIXME: read the UTF encoding in the string
+				printf("Added String '%s' with id %d\n", item->value.string.value, item->id);
+				Item *t;
+				HASH_FIND_INT(class->items, &item->id, t); //FIXME: why does &item_id fail here?!
+				if (t != NULL) printf("Item is %s\n", t->value.string.value);
+				else printf("t is NULL :( \n");
 				break;
 			case INTEGER: // Integer: a signed 32-bit two's complement number in big-endian format
 				fread(&int32, sizeof(int32), 1, class_file.file);
+				item->id = ++item_id;
 				item->value.integer = be32toh(int32);
+				item->label = "Integer";
 				table_size_bytes += 4;
 				HASH_ADD_INT(class->items, id, item);
+				printf("Added Integer with id %d\n", item->id);
 				break;
 			case FLOAT: // Float: a 32-bit single-precision IEEE 754 floating-point number
 				fread(&flt, sizeof(flt), 1, class_file.file);
+				item->id = ++item_id;
 				item->value.flt = flt;
 				table_size_bytes += 4;
+				item->label = "Float";
 				HASH_ADD_INT(class->items, id, item);
+				printf("Added Float with id %d\n", item->id);
 				break;
 			case LONG: // Long: a signed 64-bit two's complement number in big-endian format (takes two slots in the constant pool table)
 				fread(&lng, sizeof(lng), 1, class_file.file);
+				item->id = ++item_id;
 				item->value.lng = be64toh(lng);
 				table_size_bytes += 8;
+				item->label = "Long";
 				HASH_ADD_INT(class->items, id, item);
+				printf("Added Long with id %d\n", item->id);
 				break;
 			case DOUBLE: // Double: a 64-bit double-precision IEEE 754 floating-point number (takes two slots in the constant pool table)
 				fread(&dbl, sizeof(dbl), 1, class_file.file);
+				item->id = ++item_id;
 				item->value.dbl = dbl;
 				table_size_bytes += 8;
+				item->label = "Double";
 				HASH_ADD_INT(class->items, id, item);
+				printf("Added Double with id %d\n", item->id);
 				break;
 			case CLASS: // Class reference: an uint16 within the constant pool to a UTF-8 string containing the fully qualified class name
 				fread(&uint16, sizeof(uint16), 1, class_file.file);
+				//item->id = ++item_id;
 				item->value.class_idx = be16toh(uint16);
 				table_size_bytes += 2;
+				item->label = "Class";
 				break;
 			case STRING: // String reference: an uint16 within the constant pool to a UTF-8 string
 				fread(&uint16, sizeof(uint16), 1, class_file.file);
+				//item->id = ++item_id;
 				item->value.class_idx = be16toh(uint16);
 				table_size_bytes += 2;
+				//HASH_ADD_INT(class->
 				break;
 			case FIELD: // Field reference: two uint16 within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
 				field = (Ref *) malloc(sizeof(Ref));
@@ -118,6 +141,7 @@ Class read_class(const ClassFile class_file) {
 				method->name_idx = be16toh(method->name_idx);
 				table_size_bytes += 4;
 				HASH_ADD_INT(class->methods, id, method);
+				item->label = "Method ref";
 				break;
 			case INTERFACE_METHOD: // Interface method reference: 2 uint16 within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
 				method = (Ref *) malloc(sizeof(Ref));
@@ -127,6 +151,7 @@ Class read_class(const ClassFile class_file) {
 				method->class_idx = be16toh(method->class_idx);
 				method->name_idx = be16toh(method->name_idx);
 				HASH_ADD_INT(class->methods, id, method);
+				item->label = "Interface method ref";
 				table_size_bytes += 4;
 				break;
 			case NAME: // Name and type descriptor: 2 uint16 to UTF-8 strings, 1st representing a name (identifier), 2nd a specially encoded type descriptor
@@ -135,6 +160,7 @@ Class read_class(const ClassFile class_file) {
 				fread(&uint16, sizeof(uint16), 1, class_file.file);
 				printf("Name uint16 2: %d\n", be16toh(uint16));
 				table_size_bytes += 4;
+				item->label = "Name ref";
 				break;
 		}
 	}
@@ -163,7 +189,7 @@ void print_class(FILE *stream, const Class class) {
 	Item *s;
 	int i = 1;
 	for (s = class.items; s != NULL; s = s->hh.next) {
-		fprintf(stream, "Item %d (%s): ", i, tagtostr(s->tag));
+		fprintf(stream, "Item %d (%s): ", i, s->label);
 		if (s->tag == STRING_UTF8) {
 			fprintf(stream, "%s\n", s->value.string.value);
 		} else if (s->tag == INTEGER) {
@@ -189,30 +215,19 @@ void print_class(FILE *stream, const Class class) {
 	}
 
 	fprintf(stream, "Printing %d methods...\n", HASH_COUNT(class.methods));
-	Ref *m;
-	for (m = class.methods; m != NULL; m = m->hh.next) {
-		fprintf(stream, "Method class/name: %d/%d\n", m->class_idx, m->name_idx);
+	Ref *r;
+	for (r = class.methods; r != NULL; r = r->hh.next) {
+		fprintf(stream, "Method class/name: %u/%u ->", r->class_idx, r->name_idx);
+		Item *item;
+		uint16_t key = r->class_idx;
+		HASH_FIND_INT(class.items, &key, item);
+		if (item != NULL) fprintf(stream, "%s\n", item->label);
+		else fprintf(stream, " (lookup failed)\n" );
 	}
+
 	fprintf(stream, "Printing %d fields...\n", HASH_COUNT(class.fields));
 	Ref *f;
 	for (f = class.fields; f != NULL; f = f->hh.next) {
 		fprintf(stream, "Field class/name: %d/%d\n", f->class_idx, f->name_idx);
 	}
-}
-
-char *tagtostr(uint8_t tag) {
-	switch (tag) {
-		case 1: return "String";
-		case 3: return "Integer";
-		case 4: return "Float";
-		case 5: return "Long";
-		case 6: return "Double";
-		case 7: return "Class";
-		case 8: return "String ref";
-		case 9: return "Field";
-		case 10: return "Method";
-		case 11: return "Interface Method";
-		case 12: return "Name";
-	}
-	return "Unknown";
 }
