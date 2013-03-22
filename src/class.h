@@ -24,6 +24,10 @@ enum cpool_t {
 	INVOKE_DYNAMIC 	 = 18
 };
 
+typedef struct {
+	char *info;
+} Attribute;
+
 /* A wrapper for FILE structs that also holds the file name.  */
 typedef struct {
 	char *file_name;
@@ -35,7 +39,7 @@ typedef struct {
 	uint16_t name_idx;
 	uint16_t descriptor_idx;
 	uint16_t attrs_count;
-	Attribute *attrs
+	Attribute *attrs;
 } Field;
 
 /* Wraps references to an item in the constant pool */
