@@ -86,7 +86,7 @@ typedef struct {
 	Ref *attributes;
 } Class;
 
-/* Parse the constant pool into class from class_file. ClassFile.file MUST be at the correct seek point */
+/* Parse the constant pool into class from class_file. ClassFile.file MUST be at the correct seek point i.e. byte offset 11 */
 uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const ClassFile class_file);
 
 /* Return true if class_file's first four bytes match 0xcafebabe. */
