@@ -75,7 +75,7 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				uint32_t high, low;
 				fread(&high, sizeof(high), 1, class_file.file);
 				fread(&low, sizeof(low), 1, class_file.file);
-				item->value.lng = ((long) be32toh(high_bytes) << 32) + be32toh(low_bytes);
+				item->value.lng = ((long) be32toh(high) << 32) + be32toh(low);
 				item->label = "Long";
 				++item_id;
 				table_size_bytes += 8;
@@ -85,7 +85,7 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				uint32_t high, low;
 				fread(&high, sizeof(high), 1, class_file.file);
 				fread(&low, sizeof(low), 1, class_file.file);
-				item->value.dbl = high | low;
+				item->value.dbl = ((long) be32toh(high) << 32) + be32toh(low);
 				item->label = "Double";
 				++item_id;
 				table_size_bytes += 8;
