@@ -27,35 +27,34 @@ Class *read_class(const ClassFile class_file) {
 	class->minor_version = minor_version;
 	class->major_version = major_version;
 	class->const_pool_count = const_pool_count;
+	class->pool_size_bytes = parse_const_pool(class, const_pool_count, class_file);
+	return class;
+}
 
+uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const ClassFile class_file) {
 	uint16_t item_id = 0;
-	uint16_t field_id = 0;
-	uint16_t ifacemeth_id = 0;
 	uint32_t table_size_bytes = 0;
 	int i;
 	char tag_byte;
 	int32_t int32;
 	uint16_t uint16;
-	char *str;
-	Ref *method;
-	Ref *field;
-	
-	for (i = 1; i < const_pool_count; i++) {
+	Ref r;
+
+	for (i = 0; i < const_pool_count; i++) {
 		fread(&tag_byte, sizeof(char), 1, class_file.file);
 		printf("Tag byte: %d\n", tag_byte);
 		Item *item = (Item *) malloc(sizeof(Item));
 		item->tag = tag_byte;
 		// Populate item based on tag_byte
 		switch (tag_byte) {
-			case STRING_UTF8: // String prefixed by a 16-bit number (type u2) indicating the number of bytes in the encoded string which immediately follows
+			case STRING_UTF8: // String prefixed by a uint16 indicating the number of bytes in the encoded string which immediately follows
 				item->id = ++item_id;
-				fread(&uint16, sizeof(uint16), 1, class_file.file);
-				uint16 = be16toh(uint16);
-				int str_len = uint16;
-				str = malloc(sizeof(char) * str_len);
-				fread(str, sizeof(char), str_len, class_file.file);
 				String s;
-				s.length = str_len;
+				char *str;
+				fread(&s.length, sizeof(s.length), 1, class_file.file);
+				s.length = be16toh(s.length);
+				str = malloc(sizeof(char) * s.length);
+				fread(str, sizeof(char), s.length, class_file.file);
 				s.value = str;
 				item->value.string = s;
 				item->label = "String";
@@ -93,65 +92,54 @@ Class *read_class(const ClassFile class_file) {
 				table_size_bytes += 8;
 				break;
 			case CLASS: // Class reference: an uint16 within the constant pool to a UTF-8 string containing the fully qualified class name
-				//item->id = ++item_id;
-				fread(&uint16, sizeof(uint16), 1, class_file.file);
-				//item->value.class_idx = be16toh(uint16);
+				item->id = ++item_id;
+				fread(&r.class_idx, sizeof(r.class_idx), 1, class_file.file);
+				r.class_idx = be16toh(r.class_idx);
+				item->value.ref = r;
+				item->label = "Class ref";
 				table_size_bytes += 2;
-				//item->label = "Class";
+				HASH_ADD(hh, class->items, id, sizeof(item->id), item);
 				break;
 			case STRING: // String reference: an uint16 within the constant pool to a UTF-8 string
-				fread(&uint16, sizeof(uint16), 1, class_file.file);
-				//item->id = ++item_id;
-				//item->value.class_idx = be16toh(uint16);
+				item->id = ++item_id;
+				fread(&r.class_idx, sizeof(r.class_idx), 1, class_file.file);
+				r.class_idx = be16toh(r.class_idx);
+				item->value.ref = r;
+				item->label = "String ref";
 				table_size_bytes += 2;
-				//HASH_ADD_INT(class->
+				HASH_ADD(hh, class->items, id, sizeof(item->id), item);
 				break;
 			case FIELD: // Field reference: two uint16 within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
-				field->id = ++field_id;
-				field = (Ref *) malloc(sizeof(Ref));
-				fread(&field->class_idx, sizeof(uint16), 1, class_file.file);
-				fread(&field->name_idx, sizeof(uint16), 1, class_file.file);
-				field->class_idx = be16toh(field->class_idx);
-				field->name_idx = be16toh(field->name_idx);
-				HASH_ADD(hh, class->fields, id, sizeof(field->id), field);
-				table_size_bytes += 4;
-				break;
+				item->label = "Field ref";
+				/* FALL THROUGH TO NEXT */
 			case METHOD: // Method reference: two uint16s within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
-				//method = (Ref *) malloc(sizeof(Ref));
+				if (item->label == NULL) item->label = "Method ref";
+				/* FALL THROUGH TO NEXT */
+			case INTERFACE_METHOD: // Interface method reference: 2 uint16 within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
 				item->id = ++item_id;
-				Ref r;
 				fread(&r.class_idx, sizeof(r.class_idx), 1, class_file.file);
 				fread(&r.name_idx, sizeof(r.name_idx), 1, class_file.file);
 				r.class_idx = be16toh(r.class_idx);
 				r.name_idx = be16toh(r.name_idx);
 				item->value.ref = r;
-				item->label = "Method ref";
-				table_size_bytes += 4;
+				if (item->label == NULL) item->label = "Interface method ref";
 				HASH_ADD(hh, class->items, id, sizeof(item->id), item);
-				//HASH_ADD(hh, class->methods, id, sizeof(method->id), method);
-				break;
-			case INTERFACE_METHOD: // Interface method reference: 2 uint16 within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
-				method = (Ref *) malloc(sizeof(Ref));
-				fread(&method->class_idx, sizeof(uint16), 1, class_file.file);
-				fread(&method->name_idx, sizeof(uint16), 1, class_file.file);
-				method->id = ++ifacemeth_id;
-				method->class_idx = be16toh(method->class_idx);
-				method->name_idx = be16toh(method->name_idx);
-				HASH_ADD(hh, class->methods, id, sizeof(method->id), method);
 				table_size_bytes += 4;
 				break;
 			case NAME: // Name and type descriptor: 2 uint16 to UTF-8 strings, 1st representing a name (identifier), 2nd a specially encoded type descriptor
-				fread(&uint16, sizeof(uint16), 1, class_file.file);
-				printf("Name uint16 1: %d\n", be16toh(uint16));
-				fread(&uint16, sizeof(uint16), 1, class_file.file);
-				printf("Name uint16 2: %d\n", be16toh(uint16));
+				item->id = ++item_id;
+				fread(&r.class_idx, sizeof(r.class_idx), 1, class_file.file);
+				fread(&r.name_idx, sizeof(r.name_idx), 1, class_file.file);
+				r.class_idx = be16toh(r.class_idx);
+				r.name_idx = be16toh(r.name_idx);
+				item->value.ref = r;
+				if (item->label == NULL) item->label = "Name ref";
+				HASH_ADD(hh, class->items, id, sizeof(item->id), item);
 				table_size_bytes += 4;
 				break;
 		}
 	}
-
-	class->pool_size_bytes = table_size_bytes;
-	return class;
+	return table_size_bytes;
 }
 
 bool is_class(FILE *class_file) {
@@ -182,9 +170,9 @@ void print_class(FILE *stream, const Class *class) {
 			fprintf(stream, "%ld\n", s->value.lng);
 		} else if (s->tag == DOUBLE) {
 			fprintf(stream, "%lf\n", s->value.dbl);
-		} else if (s->tag == CLASS) {
+		} else if (s->tag == CLASS || s->tag == STRING) {
 			fprintf(stream, "%u\n", s->value.ref.class_idx);
-		} else if (s->tag == STRING || s->tag == FIELD || s->tag == METHOD) {
+		} else if(s->tag == FIELD || s->tag == METHOD || s->tag == INTERFACE_METHOD || s->tag == NAME) {
 			fprintf(stream, "%u.%u\n", s->value.ref.class_idx, s->value.ref.name_idx);
 		} else {
 			fprintf(stream, "Don't know how to print item # %d of type %d\n", i, s->tag);

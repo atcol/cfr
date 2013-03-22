@@ -36,7 +36,7 @@ typedef struct {
 } Ref;
 
 typedef struct {
-	int length;
+	uint16_t length;
 	char *value;
 } String;
 
@@ -74,6 +74,9 @@ typedef struct {
 	uint16_t attribute_count;
 	Ref *attributes;
 } Class;
+
+/* Parse the constant pool into class from class_file. ClassFile.file MUST be at the correct seek point */
+uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const ClassFile class_file);
 
 /* Return true if class_file's first four bytes match 0xcafebabe. */
 bool is_class(FILE *class_file);
