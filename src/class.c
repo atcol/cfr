@@ -72,15 +72,22 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				break;
 			case LONG: // Long: a signed 64-bit two's complement number in big-endian format (takes two slots in the constant pool table)
 				item->id = ++item_id;
-				fread(&item->value.lng, sizeof(item->value.lng), 1, class_file.file);
-				item->value.lng = be64toh(item->value.lng);
-				table_size_bytes += 8;
+				uint32_t high, low;
+				fread(&high, sizeof(high), 1, class_file.file);
+				fread(&low, sizeof(low), 1, class_file.file);
+				item->value.lng = ((long) be32toh(high_bytes) << 32) + be32toh(low_bytes);
 				item->label = "Long";
+				++item_id;
+				table_size_bytes += 8;
 				break;
 			case DOUBLE: // Double: a 64-bit double-precision IEEE 754 floating-point number (takes two slots in the constant pool table)
 				item->id = ++item_id;
-				fread(&item->value.dbl, sizeof(item->value.dbl), 1, class_file.file);
+				uint32_t high, low;
+				fread(&high, sizeof(high), 1, class_file.file);
+				fread(&low, sizeof(low), 1, class_file.file);
+				item->value.dbl = high | low;
 				item->label = "Double";
+				++item_id;
 				table_size_bytes += 8;
 				break;
 			case CLASS: // Class reference: an uint16 within the constant pool to a UTF-8 string containing the fully qualified class name
