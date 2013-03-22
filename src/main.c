@@ -34,7 +34,7 @@ int main(int argc, char *args[]) {
 			file
 		};
 
-		const Class class = read_class(class_file);
+		const Class *class = read_class(class_file);
 		print_class(stdout, class);
 		fclose(file);
 	}
