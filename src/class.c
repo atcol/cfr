@@ -37,6 +37,7 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 	int i;
 	char tag_byte;
 	Ref r;
+	uint32_t high, low;
 
 	for (i = 1; i < const_pool_count; i++) {
 		fread(&tag_byte, sizeof(char), 1, class_file.file);
@@ -72,7 +73,6 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				break;
 			case LONG: // Long: a signed 64-bit two's complement number in big-endian format (takes two slots in the constant pool table)
 				item->id = ++item_id;
-				uint32_t high, low;
 				fread(&high, sizeof(high), 1, class_file.file);
 				fread(&low, sizeof(low), 1, class_file.file);
 				item->value.lng = ((long) be32toh(high) << 32) + be32toh(low);
@@ -82,10 +82,17 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				break;
 			case DOUBLE: // Double: a 64-bit double-precision IEEE 754 floating-point number (takes two slots in the constant pool table)
 				item->id = ++item_id;
-				uint32_t high, low;
 				fread(&high, sizeof(high), 1, class_file.file);
 				fread(&low, sizeof(low), 1, class_file.file);
-				item->value.dbl = ((long) be32toh(high) << 32) + be32toh(low);
+				unsigned long bits = ((long) be32toh(high) << 32) + be32toh(low);
+				if (bits != 0x7ff0000000000000L && bits != 0xfff0000000000000L) {
+					int s = ((bits >> 63) == 0) ? 1 : -1; 
+					int e = (int)((bits >> 52) & 0x7ffL);
+					long m = (e == 0) 
+						? (bits & 0xfffffffffffffL) << 1 
+						: (bits & 0xfffffffffffffL) | 0x10000000000000L;
+					item->value.dbl = s * m * (2 << (e - 1075)); //FIXME this is wrong
+				}
 				item->label = "Double";
 				++item_id;
 				table_size_bytes += 8;
