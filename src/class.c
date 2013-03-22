@@ -37,12 +37,10 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 	int i;
 	char tag_byte;
 	int32_t int32;
-	uint16_t uint16;
 	Ref r;
 
 	for (i = 0; i < const_pool_count; i++) {
 		fread(&tag_byte, sizeof(char), 1, class_file.file);
-		printf("Tag byte: %d\n", tag_byte);
 		Item *item = (Item *) malloc(sizeof(Item));
 		item->tag = tag_byte;
 		// Populate item based on tag_byte
@@ -58,7 +56,7 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				s.value = str;
 				item->value.string = s;
 				item->label = "String";
-				table_size_bytes += 2 + str_len;
+				table_size_bytes += 2 + s.length;
 				HASH_ADD(hh, class->items, id, sizeof(item->id), item);
 				break;
 			case INTEGER: // Integer: a signed 32-bit two's complement number in big-endian format
