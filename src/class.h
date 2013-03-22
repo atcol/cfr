@@ -50,8 +50,7 @@ typedef struct {
 		double dbl;
 		long lng;
 		int32_t integer;
-		uint16_t class_idx;
-		uint16_t name_idx;
+		Ref ref; /* A method, field or interface reference */
 	} value;
 	UT_hash_handle hh;
 } Item;
@@ -61,7 +60,7 @@ typedef struct {
 	char *file_name;
 	uint16_t minor_version;
 	uint16_t major_version;
-	uint16_t const_pool_size;
+	uint16_t const_pool_count;
 	uint32_t pool_size_bytes;
 	Item *items;
 	uint16_t this_class;
