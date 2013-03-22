@@ -80,12 +80,9 @@ typedef struct {
 bool is_class(FILE *class_file);
 
 /* Parse the given class file into a Class struct. */
-Class read_class(const ClassFile class_file);
+Class *read_class(const ClassFile class_file);
 
 /* Write the name and class stats/contents to the given stream. */
-void print_class(FILE *stream, const Class class);
-
-/* Convert a tag byte to a label */
-char *tagtostr(uint8_t tag);
+void print_class(FILE *stream, const Class *class);
 
 #endif //CLASS_H__
