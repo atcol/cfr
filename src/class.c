@@ -36,10 +36,9 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 	uint32_t table_size_bytes = 0;
 	int i;
 	char tag_byte;
-	int32_t int32;
 	Ref r;
 
-	for (i = 0; i < const_pool_count; i++) {
+	for (i = 1; i < const_pool_count; i++) {
 		fread(&tag_byte, sizeof(char), 1, class_file.file);
 		Item *item = (Item *) malloc(sizeof(Item));
 		item->tag = tag_byte;
@@ -57,22 +56,19 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				item->value.string = s;
 				item->label = "String";
 				table_size_bytes += 2 + s.length;
-				HASH_ADD(hh, class->items, id, sizeof(item->id), item);
 				break;
 			case INTEGER: // Integer: a signed 32-bit two's complement number in big-endian format
 				item->id = ++item_id;
-				fread(&int32, sizeof(int32), 1, class_file.file);
-				item->value.integer = be32toh(int32);
+				fread(&item->value.integer, sizeof(item->value.integer), 1, class_file.file);
+				item->value.integer = be32toh(item->value.integer);
 				item->label = "Integer";
 				table_size_bytes += 4;
-				HASH_ADD(hh, class->items, id, sizeof(item->id), item);
 				break;
 			case FLOAT: // Float: a 32-bit single-precision IEEE 754 floating-point number
 				item->id = ++item_id;
 				fread(&item->value.flt, sizeof(item->value.flt), 1, class_file.file);
 				table_size_bytes += 4;
 				item->label = "Float";
-				HASH_ADD(hh, class->items, id, sizeof(item->id), item);
 				break;
 			case LONG: // Long: a signed 64-bit two's complement number in big-endian format (takes two slots in the constant pool table)
 				item->id = ++item_id;
@@ -80,13 +76,11 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				item->value.lng = be64toh(item->value.lng);
 				table_size_bytes += 8;
 				item->label = "Long";
-				HASH_ADD(hh, class->items, id, sizeof(item->id), item);
 				break;
 			case DOUBLE: // Double: a 64-bit double-precision IEEE 754 floating-point number (takes two slots in the constant pool table)
 				item->id = ++item_id;
 				fread(&item->value.dbl, sizeof(item->value.dbl), 1, class_file.file);
 				item->label = "Double";
-				HASH_ADD(hh, class->items, id, sizeof(item->id), item);
 				table_size_bytes += 8;
 				break;
 			case CLASS: // Class reference: an uint16 within the constant pool to a UTF-8 string containing the fully qualified class name
@@ -96,7 +90,6 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				item->value.ref = r;
 				item->label = "Class ref";
 				table_size_bytes += 2;
-				HASH_ADD(hh, class->items, id, sizeof(item->id), item);
 				break;
 			case STRING: // String reference: an uint16 within the constant pool to a UTF-8 string
 				item->id = ++item_id;
@@ -105,7 +98,6 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				item->value.ref = r;
 				item->label = "String ref";
 				table_size_bytes += 2;
-				HASH_ADD(hh, class->items, id, sizeof(item->id), item);
 				break;
 			case FIELD: // Field reference: two uint16 within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
 				item->label = "Field ref";
@@ -121,7 +113,6 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				r.name_idx = be16toh(r.name_idx);
 				item->value.ref = r;
 				if (item->label == NULL) item->label = "Interface method ref";
-				HASH_ADD(hh, class->items, id, sizeof(item->id), item);
 				table_size_bytes += 4;
 				break;
 			case NAME: // Name and type descriptor: 2 uint16 to UTF-8 strings, 1st representing a name (identifier), 2nd a specially encoded type descriptor
@@ -132,10 +123,13 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				r.name_idx = be16toh(r.name_idx);
 				item->value.ref = r;
 				if (item->label == NULL) item->label = "Name ref";
-				HASH_ADD(hh, class->items, id, sizeof(item->id), item);
 				table_size_bytes += 4;
 				break;
+			default:
+				printf("Found tag byte '%d' but don't know what to do with it\n", tag_byte);
+				break;
 		}
+		HASH_ADD(hh, class->items, id, sizeof(item->id), item);
 	}
 	return table_size_bytes;
 }
