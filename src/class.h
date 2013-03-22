@@ -30,6 +30,14 @@ typedef struct {
 	FILE *file;
 } ClassFile;
 
+typedef struct {
+	uint16_t access_flags;
+	uint16_t name_idx;
+	uint16_t descriptor_idx;
+	uint16_t attrs_count;
+	Attribute *attrs
+} Field;
+
 /* Wraps references to an item in the constant pool */
 typedef struct {
 	uint16_t id;
