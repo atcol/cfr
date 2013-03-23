@@ -28,6 +28,10 @@ Class *read_class(const ClassFile class_file) {
 	class->major_version = major_version;
 	class->const_pool_count = const_pool_count;
 	class->pool_size_bytes = parse_const_pool(class, const_pool_count, class_file);
+	
+	if (class->pool_size_bytes == 0) {
+		return NULL;
+	}
 
 	fread(&class->access_flags, sizeof(class->access_flags), 1, class_file.file);
 	class->access_flags = be16toh(class->access_flags);
@@ -64,6 +68,11 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 
 	for (i = 1; i <= MAX_ITERATIONS; i++) {
 		fread(&tag_byte, sizeof(char), 1, class_file.file);
+		if (tag_byte < MIN_CPOOL_TAG || tag_byte > MAX_CPOOL_TAG) {
+			fprintf(stderr, "Tag byte '%d' is outside permitted range %u to %u\n", tag_byte, MIN_CPOOL_TAG, MAX_CPOOL_TAG);
+			table_size_bytes = 0;
+			break; // fail fast
+		}
 		Item *item = (Item *) malloc(sizeof(Item));
 		item->tag = tag_byte;
 		item->id = ++item_id;
