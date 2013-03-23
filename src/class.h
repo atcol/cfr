@@ -7,6 +7,14 @@
 #include <stdlib.h>
 #include "uthash.h"
 
+enum RANGES {
+	/* The smallest permitted value for a tag byte */
+	MIN_CPOOL_TAG = 1,
+
+	/* The largest permitted value for a tag byte */
+	MAX_CPOOL_TAG = 18
+};
+
 enum cpool_t {
 	STRING_UTF8      = 1, /* occupies 2+x bytes */
 	INTEGER          = 3, /* 32bit two's-compliment big endian int */
@@ -112,7 +120,9 @@ typedef struct {
 	Ref *attributes;
 } Class;
 
-/* Parse the constant pool into class from class_file. ClassFile.file MUST be at the correct seek point i.e. byte offset 11 */
+/* Parse the constant pool into class from class_file. ClassFile.file MUST be at the correct seek point i.e. byte offset 11.
+ * The number of bytes read is returned. A return value of 0 signifies an invalid constant pool and class may have been changed.
+ */
 uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const ClassFile class_file);
 
 /* Parse the given class file into a Class struct. */
