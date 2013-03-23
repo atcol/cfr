@@ -217,6 +217,10 @@ void print_class(FILE *stream, const Class *class) {
 	HASH_FIND(hh, class->items, &cl_item->value.ref.class_idx, sizeof(cl_item->value.ref.class_idx), cl_str);
 	fprintf(stream, "This class: %s\n", cl_str->value.string.value);
 
+	HASH_FIND(hh, class->items, &class->super_class, sizeof(class->super_class), cl_item);
+	HASH_FIND(hh, class->items, &cl_item->value.ref.class_idx, sizeof(cl_item->value.ref.class_idx), cl_str);
+	fprintf(stream, "Super class: %s\n", cl_str->value.string.value);
+
 	fprintf(stream, "Printing %d methods...\n", HASH_COUNT(class->methods));
 	Ref *r;
 	for (r = class->methods; r != NULL; r = r->hh.next) {
