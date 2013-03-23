@@ -208,6 +208,12 @@ void print_class(FILE *stream, const Class *class) {
 
 	fprintf(stream, "Access flags: %d\n", class->access_flags); //TODO use bitwise ops to for printing flags e.g. switch
 
+	Item *cl_item; // the initial class ref item
+	Item *cl_str;
+	HASH_FIND(hh, class->items, &class->this_class, sizeof(class->this_class), cl_item);
+	HASH_FIND(hh, class->items, &cl_item->value.ref.class_idx, sizeof(cl_item->value.ref.class_idx), cl_str);
+	fprintf(stream, "This class: %s\n", cl_str->value.string.value);
+
 	fprintf(stream, "Printing %d methods...\n", HASH_COUNT(class->methods));
 	Ref *r;
 	for (r = class->methods; r != NULL; r = r->hh.next) {
