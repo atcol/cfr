@@ -24,6 +24,17 @@ enum cpool_t {
 	INVOKE_DYNAMIC 	 = 18
 };
 
+enum AccessFlags {
+	ACC_PUBLIC 		= 0x0001,
+	ACC_FINAL 		= 0x0010,
+	ACC_SUPER 		= 0x0020,
+	ACC_INTERFACE 	= 0x0200,
+	ACC_ABSTRACT 	= 0x0400,
+	ACC_SYNTHETIC 	= 0x1000,
+	ACC_ANNOTATION 	= 0x2000,
+	ACC_ENUM 		= 0x4000
+};
+
 typedef struct {
 	char *info;
 } Attribute;
@@ -88,15 +99,16 @@ typedef struct {
 	uint16_t const_pool_count;
 	uint32_t pool_size_bytes;
 	Item *items;
+	uint16_t access_flags;
 	uint16_t this_class;
 	uint16_t super_class;
-	uint16_t interface_count;
+	uint16_t interfaces_count;
 	Ref *interfaces;
-	uint16_t field_count;
+	uint16_t fields_count;
 	Ref *fields;
-	uint16_t method_count;
+	uint16_t methods_count;
 	Ref *methods;
-	uint16_t attribute_count;
+	uint16_t attributes_count;
 	Ref *attributes;
 } Class;
 
