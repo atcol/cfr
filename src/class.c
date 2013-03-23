@@ -135,7 +135,7 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				table_size_bytes += 4;
 				break;
 			default:
-				printf("Found tag byte '%d' but don't know what to do with it\n", tag_byte);
+				fprintf(stderr, "Found tag byte '%d' but don't know what to do with it\n", tag_byte);
 				item = NULL;
 				break;
 		}
