@@ -211,7 +211,7 @@ void print_class(FILE *stream, const Class *class) {
 
 	fprintf(stream, "Access flags: %d\n", class->access_flags); //TODO use bitwise ops to for printing flags e.g. switch
 
-	Item *cl_item; // the initial class ref item whose class_idx we use
+	Item *cl_item; // the initial class ref item whose value.ref.class_idx we use
 	Item *cl_str;
 	HASH_FIND(hh, class->items, &class->this_class, sizeof(class->this_class), cl_item);
 	HASH_FIND(hh, class->items, &cl_item->value.ref.class_idx, sizeof(cl_item->value.ref.class_idx), cl_str);
