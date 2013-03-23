@@ -202,6 +202,8 @@ void print_class(FILE *stream, const Class *class) {
 		i++;
 	}
 
+	fprintf(stream, "Access flags: %d\n", class->access_flags); //TODO use bitwise ops to for printing flags e.g. switch
+
 	fprintf(stream, "Printing %d methods...\n", HASH_COUNT(class->methods));
 	Ref *r;
 	for (r = class->methods; r != NULL; r = r->hh.next) {
