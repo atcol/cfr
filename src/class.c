@@ -41,6 +41,11 @@ Class *read_class(const ClassFile class_file) {
 	fread(&class->interfaces_count, sizeof(class->interfaces_count), 1, class_file.file);
 	class->interfaces_count = be16toh(class->interfaces_count);
 
+	Ref *r;
+	do {
+		r = (Ref *) malloc(sizeof(Ref) * class->interfaces_count);
+	} while (fread(&r->class_idx, sizeof(r->class_idx), 1, class_file.file) > 0);
+
 	return class;
 }
 
@@ -224,6 +229,8 @@ void print_class(FILE *stream, const Class *class) {
 	HASH_FIND(hh, class->items, &class->super_class, sizeof(class->super_class), cl_item);
 	HASH_FIND(hh, class->items, &cl_item->value.ref.class_idx, sizeof(cl_item->value.ref.class_idx), cl_str);
 	fprintf(stream, "Super class: %s\n", cl_str->value.string.value);
+
+	fprintf(stream, "Interfaces count: %d\n", class->interfaces_count);
 
 	fprintf(stream, "Printing %d methods...\n", HASH_COUNT(class->methods));
 	Ref *r;
