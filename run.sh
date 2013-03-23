@@ -1,2 +1,2 @@
 #/bin/bash
-clear; scons && clear && ./cfr test/Test.class test/RabbitQueueClient.class test/RabbitQueueConsumer.class /dev/urandom test/LongTest.class test/DoubleTest.class
+clear; scons && clear && ./cfr test/files/Test.class test/files/RabbitQueueClient.class test/files/RabbitQueueConsumer.class /dev/urandom test/files/LongTest.class test/files/DoubleTest.class
