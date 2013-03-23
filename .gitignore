@@ -18,3 +18,5 @@
 
 # Vim related
 *.swp
+
+*.hexer
