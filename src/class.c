@@ -41,10 +41,16 @@ Class *read_class(const ClassFile class_file) {
 	fread(&class->interfaces_count, sizeof(class->interfaces_count), 1, class_file.file);
 	class->interfaces_count = be16toh(class->interfaces_count);
 
-	Ref *r;
-	do {
-		r = (Ref *) malloc(sizeof(Ref) * class->interfaces_count);
-	} while (fread(&r->class_idx, sizeof(r->class_idx), 1, class_file.file) > 0);
+	int idx = 0;
+	while (idx < class->interfaces_count) {
+		Ref *r = (Ref *) malloc(sizeof(Ref));
+		fread(&r->class_idx, sizeof(r->class_idx), 1, class_file.file);
+		r->class_idx = be16toh(r->class_idx);
+		r->id = idx;
+		printf("class_idx for interface #%u is %u\n", idx, r->class_idx);
+		HASH_ADD(hh, class->interfaces, id, sizeof(r->id), r);
+		idx++;
+	}
 
 	return class;
 }
@@ -230,9 +236,24 @@ void print_class(FILE *stream, const Class *class) {
 	HASH_FIND(hh, class->items, &cl_item->value.ref.class_idx, sizeof(cl_item->value.ref.class_idx), cl_str);
 	fprintf(stream, "Super class: %s\n", cl_str->value.string.value);
 
-	fprintf(stream, "Interfaces count: %d\n", class->interfaces_count);
+	fprintf(stream, "Interfaces count: %u\n", class->interfaces_count);
 
-	fprintf(stream, "Printing %d methods...\n", HASH_COUNT(class->methods));
+	if (class->interfaces_count > 0) {
+		fprintf(stream, "Printing %u interfaces...\n", HASH_COUNT(class->interfaces));
+		uint16_t id = 0;
+		while (id < class->interfaces_count) {
+			Ref *r;
+			Item *item;
+			Item *iface;
+			HASH_FIND(hh, class->interfaces, &id, sizeof(id), r);
+			HASH_FIND(hh, class->items, &r->class_idx, sizeof(r->class_idx), item);
+			HASH_FIND(hh, class->items, &item->value.ref.class_idx, sizeof(item->value.ref.class_idx), iface);
+			fprintf(stream, "Interface: %s\n", iface->value.string.value);
+			id++;
+		}
+	}
+
+	fprintf(stream, "Printing %u methods...\n", HASH_COUNT(class->methods));
 	Ref *r;
 	for (r = class->methods; r != NULL; r = r->hh.next) {
 		fprintf(stream, "Method class/name: %u/%u ->", r->class_idx, r->name_idx);
