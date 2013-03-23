@@ -47,7 +47,6 @@ Class *read_class(const ClassFile class_file) {
 		fread(&r->class_idx, sizeof(r->class_idx), 1, class_file.file);
 		r->class_idx = be16toh(r->class_idx);
 		r->id = idx;
-		printf("class_idx for interface #%u is %u\n", idx, r->class_idx);
 		HASH_ADD(hh, class->interfaces, id, sizeof(r->id), r);
 		idx++;
 	}
