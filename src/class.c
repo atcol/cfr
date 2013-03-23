@@ -34,6 +34,9 @@ Class *read_class(const ClassFile class_file) {
 
 	fread(&class->this_class, sizeof(class->this_class), 1, class_file.file);
 	class->this_class = be16toh(class->this_class);
+
+	fread(&class->super_class, sizeof(class->super_class), 1, class_file.file);
+	class->super_class = be16toh(class->super_class);
 	return class;
 }
 
