@@ -55,13 +55,14 @@ Class *read_class(const ClassFile class_file) {
 }
 
 uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const ClassFile class_file) {
+	const int MAX_ITERATIONS = const_pool_count - 1;
 	uint16_t item_id = 0;
 	uint32_t table_size_bytes = 0;
 	int i;
 	char tag_byte;
 	Ref r;
 
-	for (i = 1; i < const_pool_count; i++) {
+	for (i = 1; i <= MAX_ITERATIONS; i++) {
 		fread(&tag_byte, sizeof(char), 1, class_file.file);
 		Item *item = (Item *) malloc(sizeof(Item));
 		item->tag = tag_byte;
