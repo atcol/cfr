@@ -240,14 +240,13 @@ void print_class(FILE *stream, const Class *class) {
 	if (class->interfaces_count > 0) {
 		fprintf(stream, "Printing %u interfaces...\n", HASH_COUNT(class->interfaces));
 		uint16_t id = 0;
-		while (id < class->interfaces_count) {
-			Ref *r;
+		Ref *iface;
+		for (iface = class->interfaces; iface != NULL; iface = iface->hh.next) {
 			Item *item;
-			Item *iface;
-			HASH_FIND(hh, class->interfaces, &id, sizeof(id), r);
-			HASH_FIND(hh, class->items, &r->class_idx, sizeof(r->class_idx), item);
-			HASH_FIND(hh, class->items, &item->value.ref.class_idx, sizeof(item->value.ref.class_idx), iface);
-			fprintf(stream, "Interface: %s\n", iface->value.string.value);
+			Item *iface_it;
+			HASH_FIND(hh, class->items, &iface->class_idx, sizeof(iface->class_idx), item);
+			HASH_FIND(hh, class->items, &item->value.ref.class_idx, sizeof(item->value.ref.class_idx), iface_it);
+			fprintf(stream, "Interface: %s\n", iface_it->value.string.value);
 			id++;
 		}
 	}
