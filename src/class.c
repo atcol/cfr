@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
 #include "uthash.h"
 
 Class *read_class(const ClassFile class_file) {
