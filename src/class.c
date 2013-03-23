@@ -9,6 +9,7 @@
 #include "uthash.h"
 
 Class *read_class(const ClassFile class_file) {
+	Class *class = (Class *) malloc(sizeof(Class));
 	uint16_t minor_version;
 	uint16_t major_version;
 	uint16_t const_pool_count;
@@ -22,7 +23,6 @@ Class *read_class(const ClassFile class_file) {
 	major_version = be16toh(major_version);
 	const_pool_count = be16toh(const_pool_count);
 
-	Class *class = (Class *) malloc(sizeof(Class));
 	class->file_name = class_file.file_name;
 	class->minor_version = minor_version;
 	class->major_version = major_version;
