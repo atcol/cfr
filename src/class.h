@@ -35,12 +35,22 @@ typedef struct {
 } ClassFile;
 
 typedef struct {
+	uint32_t high;
+	uint32_t low;
+} Double;
+
+typedef struct {
 	uint16_t access_flags;
 	uint16_t name_idx;
 	uint16_t descriptor_idx;
 	uint16_t attrs_count;
 	Attribute *attrs;
 } Field;
+
+typedef struct {
+	uint32_t high;
+	uint32_t low;
+} Long;
 
 /* Wraps references to an item in the constant pool */
 typedef struct {
@@ -62,8 +72,8 @@ typedef struct {
 	union {
 		String string;
 		float flt;
-		double dbl;
-		long lng;
+		Double dbl;
+		Long lng;
 		int32_t integer;
 		Ref ref; /* A method, field or interface reference */
 	} value;
@@ -93,11 +103,17 @@ typedef struct {
 /* Parse the constant pool into class from class_file. ClassFile.file MUST be at the correct seek point i.e. byte offset 11 */
 uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const ClassFile class_file);
 
+/* Parse the given class file into a Class struct. */
+Class *read_class(const ClassFile class_file);
+
 /* Return true if class_file's first four bytes match 0xcafebabe. */
 bool is_class(FILE *class_file);
 
-/* Parse the given class file into a Class struct. */
-Class *read_class(const ClassFile class_file);
+/* Convert the high and low bits of dbl to a double type */
+double to_double(const Double dbl);
+
+/* Convert the high and low bits of lng to a long type */
+long to_long(const Long lng);
 
 /* Write the name and class stats/contents to the given stream. */
 void print_class(FILE *stream, const Class *class);
