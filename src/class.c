@@ -28,8 +28,12 @@ Class *read_class(const ClassFile class_file) {
 	class->major_version = major_version;
 	class->const_pool_count = const_pool_count;
 	class->pool_size_bytes = parse_const_pool(class, const_pool_count, class_file);
+
 	fread(&class->access_flags, sizeof(class->access_flags), 1, class_file.file);
 	class->access_flags = be16toh(class->access_flags);
+
+	fread(&class->this_class, sizeof(class->this_class), 1, class_file.file);
+	class->this_class = be16toh(class->this_class);
 	return class;
 }
 
