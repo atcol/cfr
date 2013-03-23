@@ -50,12 +50,10 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 			case STRING_UTF8: // String prefixed by a uint16 indicating the number of bytes in the encoded string which immediately follows
 				item->label = "String";
 				String s;
-				char *str;
 				fread(&s.length, sizeof(s.length), 1, class_file.file);
 				s.length = be16toh(s.length);
-				str = malloc(sizeof(char) * s.length);
-				fread(str, sizeof(char), s.length, class_file.file);
-				s.value = str;
+				s.value = malloc(sizeof(char) * s.length);
+				fread(s.value, sizeof(char), s.length, class_file.file);
 				item->value.string = s;
 				table_size_bytes += 2 + s.length;
 				break;
