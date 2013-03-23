@@ -37,16 +37,16 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 	int i;
 	char tag_byte;
 	Ref r;
-	uint32_t high, low;
 
 	for (i = 1; i < const_pool_count; i++) {
 		fread(&tag_byte, sizeof(char), 1, class_file.file);
 		Item *item = (Item *) malloc(sizeof(Item));
 		item->tag = tag_byte;
+		item->id = ++item_id;
 		// Populate item based on tag_byte
 		switch (tag_byte) {
 			case STRING_UTF8: // String prefixed by a uint16 indicating the number of bytes in the encoded string which immediately follows
-				item->id = ++item_id;
+				item->label = "String";
 				String s;
 				char *str;
 				fread(&s.length, sizeof(s.length), 1, class_file.file);
@@ -55,50 +55,44 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				fread(str, sizeof(char), s.length, class_file.file);
 				s.value = str;
 				item->value.string = s;
-				item->label = "String";
 				table_size_bytes += 2 + s.length;
 				break;
 			case INTEGER: // Integer: a signed 32-bit two's complement number in big-endian format
-				item->id = ++item_id;
+				item->label = "Integer";
 				fread(&item->value.integer, sizeof(item->value.integer), 1, class_file.file);
 				item->value.integer = be32toh(item->value.integer);
-				item->label = "Integer";
 				table_size_bytes += 4;
 				break;
 			case FLOAT: // Float: a 32-bit single-precision IEEE 754 floating-point number
-				item->id = ++item_id;
 				fread(&item->value.flt, sizeof(item->value.flt), 1, class_file.file);
+				item->value.flt = be32toh(item->value.flt);
 				table_size_bytes += 4;
 				item->label = "Float";
 				break;
 			case LONG: // Long: a signed 64-bit two's complement number in big-endian format (takes two slots in the constant pool table)
-				item->id = ++item_id;
-				fread(&high, sizeof(high), 1, class_file.file);
-				fread(&low, sizeof(low), 1, class_file.file);
-				item->value.lng = ((long) be32toh(high) << 32) + be32toh(low);
+				fread(&item->value.lng.high, sizeof(item->value.lng.high), 1, class_file.file); // 4 bytes
+				fread(&item->value.lng.low, sizeof(item->value.lng.low), 1, class_file.file); // 4 bytes
+				item->value.lng.high = be32toh(item->value.lng.high);
+				item->value.lng.low = be32toh(item->value.lng.low);
+				//item->value.lng = ((long) be32toh(high) << 32) + be32toh(low);
 				item->label = "Long";
+				// 8-byte consts take 2 pool entries
 				++item_id;
+				++i;
 				table_size_bytes += 8;
 				break;
 			case DOUBLE: // Double: a 64-bit double-precision IEEE 754 floating-point number (takes two slots in the constant pool table)
-				item->id = ++item_id;
-				fread(&high, sizeof(high), 1, class_file.file);
-				fread(&low, sizeof(low), 1, class_file.file);
-				unsigned long bits = ((long) be32toh(high) << 32) + be32toh(low);
-				if (bits != 0x7ff0000000000000L && bits != 0xfff0000000000000L) {
-					int s = ((bits >> 63) == 0) ? 1 : -1; 
-					int e = (int)((bits >> 52) & 0x7ffL);
-					long m = (e == 0) 
-						? (bits & 0xfffffffffffffL) << 1 
-						: (bits & 0xfffffffffffffL) | 0x10000000000000L;
-					item->value.dbl = s * m * (2 << (e - 1075)); //FIXME this is wrong
-				}
+				fread(&item->value.dbl.high, sizeof(item->value.dbl.high), 1, class_file.file); // 4 bytes
+				fread(&item->value.dbl.low, sizeof(item->value.dbl.low), 1, class_file.file); // 4 bytes
+				item->value.dbl.high = be32toh(item->value.dbl.high);
+				item->value.dbl.low = be32toh(item->value.dbl.low);
 				item->label = "Double";
+				// 8-byte consts take 2 pool entries
 				++item_id;
+				++i;
 				table_size_bytes += 8;
 				break;
 			case CLASS: // Class reference: an uint16 within the constant pool to a UTF-8 string containing the fully qualified class name
-				item->id = ++item_id;
 				fread(&r.class_idx, sizeof(r.class_idx), 1, class_file.file);
 				r.class_idx = be16toh(r.class_idx);
 				item->value.ref = r;
@@ -106,7 +100,6 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				table_size_bytes += 2;
 				break;
 			case STRING: // String reference: an uint16 within the constant pool to a UTF-8 string
-				item->id = ++item_id;
 				fread(&r.class_idx, sizeof(r.class_idx), 1, class_file.file);
 				r.class_idx = be16toh(r.class_idx);
 				item->value.ref = r;
@@ -115,12 +108,11 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				break;
 			case FIELD: // Field reference: two uint16 within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
 				item->label = "Field ref";
-				/* FALL THROUGH TO NEXT */
+				/* FALL THROUGH TO METHOD */
 			case METHOD: // Method reference: two uint16s within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
 				if (item->label == NULL) item->label = "Method ref";
-				/* FALL THROUGH TO NEXT */
+				/* FALL THROUGH TO INTERFACE_METHOD */
 			case INTERFACE_METHOD: // Interface method reference: 2 uint16 within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
-				item->id = ++item_id;
 				fread(&r.class_idx, sizeof(r.class_idx), 1, class_file.file);
 				fread(&r.name_idx, sizeof(r.name_idx), 1, class_file.file);
 				r.class_idx = be16toh(r.class_idx);
@@ -130,7 +122,6 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				table_size_bytes += 4;
 				break;
 			case NAME: // Name and type descriptor: 2 uint16 to UTF-8 strings, 1st representing a name (identifier), 2nd a specially encoded type descriptor
-				item->id = ++item_id;
 				fread(&r.class_idx, sizeof(r.class_idx), 1, class_file.file);
 				fread(&r.name_idx, sizeof(r.name_idx), 1, class_file.file);
 				r.class_idx = be16toh(r.class_idx);
@@ -141,9 +132,10 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				break;
 			default:
 				printf("Found tag byte '%d' but don't know what to do with it\n", tag_byte);
+				item = NULL;
 				break;
 		}
-		HASH_ADD(hh, class->items, id, sizeof(item->id), item);
+		if (item != NULL) HASH_ADD(hh, class->items, id, sizeof(item->id), item);
 	}
 	return table_size_bytes;
 }
@@ -152,6 +144,30 @@ bool is_class(FILE *class_file) {
 	uint32_t magicNum;
 	size_t num_read = fread(&magicNum, sizeof(uint32_t), 1, class_file);
 	return num_read == 1 && be32toh(magicNum) == 0xcafebabe;
+}
+
+double to_double(const Double dbl) {
+	return -dbl.high; //FIXME check the following implementation
+	//unsigned long bits = ((long) be32toh(item->dbl.high) << 32) + be32toh(item->dbl.low);
+	//if (bits == 0x7ff0000000000000L) {
+		//return POSITIVE_INFINITY;
+	//} else if (bits == 0xfff0000000000000L) {
+		//return POSITIVE_INFINITY;
+	//} else if ((bits > 0x7ff0000000000000L && bits < 0x7fffffffffffffffL) 
+			//|| (bits > 0xfff0000000000001L && bits < 0xffffffffffffffffL)) {
+		//return NaN;
+	//} else {
+		//int s = ((bits >> 63) == 0) ? 1 : -1; 
+		//int e = (int)((bits >> 52) & 0x7ffL);
+		//long m = (e == 0) 
+			//? (bits & 0xfffffffffffffL) << 1 
+			//: (bits & 0xfffffffffffffL) | 0x10000000000000L;
+		//return s * m * (2 << (e - 1075)); //FIXME this is wrong
+	//} 
+}
+
+long to_long(const Long lng) {
+	return ((long) be32toh(lng.high) << 32) + be32toh(lng.low);
 }
 
 void print_class(FILE *stream, const Class *class) {
@@ -165,7 +181,7 @@ void print_class(FILE *stream, const Class *class) {
 	Item *s;
 	int i = 1;
 	for (s = class->items; s != NULL; s = s->hh.next) {
-		fprintf(stream, "Item #%d (%u, %s): ", i, s->id, s->label);
+		fprintf(stream, "Item %u %s: ", s->id, s->label);
 		if (s->tag == STRING_UTF8) {
 			fprintf(stream, "%s\n", s->value.string.value);
 		} else if (s->tag == INTEGER) {
@@ -173,9 +189,9 @@ void print_class(FILE *stream, const Class *class) {
 		} else if (s->tag == FLOAT) {
 			fprintf(stream, "%f\n", s->value.flt);
 		} else if (s->tag == LONG) {
-			fprintf(stream, "%ld\n", s->value.lng);
+			fprintf(stream, "%ld\n", to_long(s->value.lng));
 		} else if (s->tag == DOUBLE) {
-			fprintf(stream, "%lf\n", s->value.dbl);
+			fprintf(stream, "%lf\n", to_double(s->value.dbl));
 		} else if (s->tag == CLASS || s->tag == STRING) {
 			fprintf(stream, "%u\n", s->value.ref.class_idx);
 		} else if(s->tag == FIELD || s->tag == METHOD || s->tag == INTERFACE_METHOD || s->tag == NAME) {
