@@ -73,10 +73,8 @@ typedef struct {
 
 /* Wraps references to an item in the constant pool */
 typedef struct {
-	uint16_t id;
 	uint16_t class_idx;
 	uint16_t name_idx;
-	UT_hash_handle hh;
 } Ref;
 
 typedef struct {
@@ -85,7 +83,6 @@ typedef struct {
 } String;
 
 typedef struct {
-	uint16_t id;
 	uint8_t tag; // the tag byte
 	char *label;
 	union {
@@ -96,7 +93,6 @@ typedef struct {
 		int32_t integer;
 		Ref ref; /* A method, field or interface reference */
 	} value;
-	UT_hash_handle hh;
 } Item;
 
 /* The .class structure */
@@ -130,6 +126,12 @@ Class *read_class(const ClassFile class_file);
 
 /* Return true if class_file's first four bytes match 0xcafebabe. */
 bool is_class(FILE *class_file);
+
+/* Return the item pointed to by class->items[idx-1]; */
+Item *get_item(const Class *class, const uint16_t idx);
+
+/* Resolve a Class's name by following class->items[index].ref.class_idx */
+Item *get_class_string(const Class *class, const uint16_t index);
 
 /* Convert the high and low bits of dbl to a double type */
 double to_double(const Double dbl);
