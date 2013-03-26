@@ -1,1 +1,1 @@
-class Interfaces implements java.io.Serializable {}
+class Interfaces implements java.io.Serializable, Cloneable {}
