@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include "uthash.h"
 
 Class *read_class(const ClassFile class_file) {
 	Class *class = (Class *) malloc(sizeof(Class));
@@ -44,13 +43,12 @@ Class *read_class(const ClassFile class_file) {
 	fread(&class->interfaces_count, sizeof(class->interfaces_count), 1, class_file.file);
 	class->interfaces_count = be16toh(class->interfaces_count);
 
+	class->interfaces = malloc(sizeof(Ref) * class->interfaces_count);
 	int idx = 0;
 	while (idx < class->interfaces_count) {
-		Ref *r = (Ref *) malloc(sizeof(Ref));
-		fread(&r->class_idx, sizeof(r->class_idx), 1, class_file.file);
-		r->class_idx = be16toh(r->class_idx);
-		r->id = idx;
-		HASH_ADD(hh, class->interfaces, id, sizeof(r->id), r);
+		//Ref r = class->interfaces[idx];
+		fread(&class->interfaces[idx].class_idx, sizeof(class->interfaces[idx].class_idx), 1, class_file.file);
+		class->interfaces[idx].class_idx = be16toh(class->interfaces[idx].class_idx);
 		idx++;
 	}
 
@@ -58,14 +56,14 @@ Class *read_class(const ClassFile class_file) {
 }
 
 uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const ClassFile class_file) {
-	const int MAX_ITERATIONS = const_pool_count - 1;
-	uint16_t item_id = 0;
+	const int MAX_ITEMS = const_pool_count - 1;
 	uint32_t table_size_bytes = 0;
 	int i;
 	char tag_byte;
 	Ref r;
+	class->items = malloc(sizeof(Item) * MAX_ITEMS);
 
-	for (i = 1; i <= MAX_ITERATIONS; i++) {
+	for (i = 1; i <= MAX_ITEMS; i++) {
 		fread(&tag_byte, sizeof(char), 1, class_file.file);
 		if (tag_byte < MIN_CPOOL_TAG || tag_byte > MAX_CPOOL_TAG) {
 			fprintf(stderr, "Tag byte '%d' is outside permitted range %u to %u\n", tag_byte, MIN_CPOOL_TAG, MAX_CPOOL_TAG);
@@ -74,7 +72,6 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 		}
 		Item *item = (Item *) malloc(sizeof(Item));
 		item->tag = tag_byte;
-		item->id = ++item_id;
 		// Populate item based on tag_byte
 		switch (tag_byte) {
 			case STRING_UTF8: // String prefixed by a uint16 indicating the number of bytes in the encoded string which immediately follows
@@ -107,7 +104,6 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				//item->value.lng = ((long) be32toh(high) << 32) + be32toh(low);
 				item->label = "Long";
 				// 8-byte consts take 2 pool entries
-				++item_id;
 				++i;
 				table_size_bytes += 8;
 				break;
@@ -118,7 +114,6 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				item->value.dbl.low = be32toh(item->value.dbl.low);
 				item->label = "Double";
 				// 8-byte consts take 2 pool entries
-				++item_id;
 				++i;
 				table_size_bytes += 8;
 				break;
@@ -165,7 +160,7 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				item = NULL;
 				break;
 		}
-		if (item != NULL) HASH_ADD(hh, class->items, id, sizeof(item->id), item);
+		if (item != NULL) class->items[i-1] = *item;
 	}
 	return table_size_bytes;
 }
@@ -174,6 +169,16 @@ bool is_class(FILE *class_file) {
 	uint32_t magicNum;
 	size_t num_read = fread(&magicNum, sizeof(uint32_t), 1, class_file);
 	return num_read == 1 && be32toh(magicNum) == 0xcafebabe;
+}
+
+Item *get_item(const Class *class, const uint16_t cp_idx) {
+	if (cp_idx < class->const_pool_count) return &class->items[cp_idx-1];
+	else return NULL;
+}
+
+Item *get_class_string(const Class *class, const uint16_t index) {
+	Item *i1 = get_item(class, index);
+	return get_item(class, i1->value.ref.class_idx);
 }
 
 double to_double(const Double dbl) {
@@ -206,12 +211,13 @@ void print_class(FILE *stream, const Class *class) {
 	fprintf(stream, "Major number: %u \n", class->major_version);
 	fprintf(stream, "Constant pool size: %u \n", class->const_pool_count);
 	fprintf(stream, "Constant table size: %ub \n", class->pool_size_bytes);
-	fprintf(stream, "Printing constant pool of %d items...\n", HASH_COUNT(class->items));
+	fprintf(stream, "Printing constant pool of %d items...\n", class->const_pool_count-1);
 
 	Item *s;
-	int i = 1;
-	for (s = class->items; s != NULL; s = s->hh.next) {
-		fprintf(stream, "Item %u %s: ", s->id, s->label);
+	uint16_t i = 1; // constant pool indexes start at 1, get_item conerts to pointer index
+	while (i < class->const_pool_count) {
+		s = get_item(class, i);
+		fprintf(stream, "Item #%u %s: ", i, s->label);
 		if (s->tag == STRING_UTF8) {
 			fprintf(stream, "%s\n", s->value.string.value);
 		} else if (s->tag == INTEGER) {
@@ -234,59 +240,39 @@ void print_class(FILE *stream, const Class *class) {
 
 	fprintf(stream, "Access flags: %d\n", class->access_flags); //TODO use bitwise ops to for printing flags e.g. switch
 
-	Item *cl_item; // the initial class ref item whose value.ref.class_idx we use
-	Item *cl_str;
-	HASH_FIND(hh, class->items, &class->this_class, sizeof(class->this_class), cl_item);
-	HASH_FIND(hh, class->items, &cl_item->value.ref.class_idx, sizeof(cl_item->value.ref.class_idx), cl_str);
+	Item *cl_str = get_class_string(class, class->this_class);
 	fprintf(stream, "This class: %s\n", cl_str->value.string.value);
 
-	HASH_FIND(hh, class->items, &class->super_class, sizeof(class->super_class), cl_item);
-	HASH_FIND(hh, class->items, &cl_item->value.ref.class_idx, sizeof(cl_item->value.ref.class_idx), cl_str);
+	cl_str = get_class_string(class, class->super_class);
 	fprintf(stream, "Super class: %s\n", cl_str->value.string.value);
 
 	fprintf(stream, "Interfaces count: %u\n", class->interfaces_count);
 
+	fprintf(stream, "Printing %u interfaces...\n", class->interfaces_count);
 	if (class->interfaces_count > 0) {
-		fprintf(stream, "Printing %u interfaces...\n", HASH_COUNT(class->interfaces));
-		uint16_t id = 0;
-		Ref *iface;
-		for (iface = class->interfaces; iface != NULL; iface = iface->hh.next) {
-			Item *item;
-			Item *iface_it;
-			HASH_FIND(hh, class->items, &iface->class_idx, sizeof(iface->class_idx), item);
-			HASH_FIND(hh, class->items, &item->value.ref.class_idx, sizeof(item->value.ref.class_idx), iface_it);
-			fprintf(stream, "Interface: %s\n", iface_it->value.string.value);
-			id++;
+		Ref *iface = class->interfaces;
+		Item *the_class;
+		uint16_t idx = 0;
+		while (idx < class->interfaces_count) {
+			printf("get item %u\n", iface->class_idx);
+			the_class = get_item(class, iface->class_idx); // the interface class reference
+			printf("got item %u %s\n", iface->class_idx, the_class->label);
+			Item *item = get_class_string(class, the_class->value.ref.class_idx);
+			printf("got item %p\n", (void *) item);
+			String string = item->value.string;
+			fprintf(stream, "Interface: %s\n", string.value);
+			idx++;
+			iface = class->interfaces + idx; // next Ref
 		}
 	}
 
-	fprintf(stream, "Printing %u methods...\n", HASH_COUNT(class->methods));
-	Ref *r;
-	for (r = class->methods; r != NULL; r = r->hh.next) {
-		fprintf(stream, "Method class/name: %u/%u ->", r->class_idx, r->name_idx);
-		Item *item;
-		HASH_FIND(hh, class->items, &r->class_idx, sizeof(r->class_idx), item);
-		if (item != NULL) {
-			fprintf(stream, "%s.", item->value.string.value);
-			HASH_FIND(hh, class->items, &r->name_idx, sizeof(r->name_idx), item);
-			if (item) fprintf(stream, "%s\n", item->value.string.value);
-		} else {
-			fprintf(stream, " (lookup failed)\n" );
-		}
+	fprintf(stream, "Printing %u methods...\n", class->methods_count);
+	i = 0;
+	if (class->methods_count > 0) {
 	}
 
-	fprintf(stream, "Printing %d fields...\n", HASH_COUNT(class->fields));
-	Ref *f;
-	for (f = class->fields; f != NULL; f = f->hh.next) {
-		fprintf(stream, "Field class/name: %d/%d\n", f->class_idx, f->name_idx);
-		Item *item;
-		HASH_FIND(hh, class->items, &f->class_idx, sizeof(f->class_idx), item);
-		if (item != NULL) {
-			fprintf(stream, "%s.", item->value.string.value);
-			HASH_FIND(hh, class->items, &f->name_idx, sizeof(f->name_idx), item);
-			if (item) fprintf(stream, "%s\n", item->value.string.value);
-		} else {
-			fprintf(stream, " (lookup failed)\n" );
-		}
+	fprintf(stream, "Printing %d fields...\n", class->fields_count);
+
+	if (class->fields_count > 0) {
 	}
 }
