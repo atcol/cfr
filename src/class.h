@@ -127,8 +127,8 @@ Class *read_class(const ClassFile class_file);
 /* Return true if class_file's first four bytes match 0xcafebabe. */
 bool is_class(FILE *class_file);
 
-/* Return the item pointed to by class->items[idx-1]; */
-Item *get_item(const Class *class, const uint16_t idx);
+/* Return the item pointed to by cp_idx, the index of an item in the constant pool */
+Item *get_item(const Class *class, const uint16_t cp_idx);
 
 /* Resolve a Class's name by following class->items[index].ref.class_idx */
 Item *get_class_string(const Class *class, const uint16_t index);
