@@ -5,7 +5,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include "uthash.h"
 
 enum RANGES {
 	/* The smallest permitted value for a tag byte */
