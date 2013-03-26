@@ -254,11 +254,8 @@ void print_class(FILE *stream, const Class *class) {
 		Item *the_class;
 		uint16_t idx = 0;
 		while (idx < class->interfaces_count) {
-			printf("get item %u\n", iface->class_idx);
 			the_class = get_item(class, iface->class_idx); // the interface class reference
-			printf("got item %u %s\n", iface->class_idx, the_class->label);
-			Item *item = get_class_string(class, the_class->value.ref.class_idx);
-			printf("got item %p\n", (void *) item);
+			Item *item = get_item(class, the_class->value.ref.class_idx);
 			String string = item->value.string;
 			fprintf(stream, "Interface: %s\n", string.value);
 			idx++;
