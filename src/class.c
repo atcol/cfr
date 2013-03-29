@@ -40,7 +40,6 @@ Class *read_class(const ClassFile class_file) {
 	class->interfaces = malloc(sizeof(Ref) * class->interfaces_count);
 	int idx = 0;
 	while (idx < class->interfaces_count) {
-		//Ref r = class->interfaces[idx];
 		fread(&class->interfaces[idx].class_idx, sizeof(class->interfaces[idx].class_idx), 1, class_file.file);
 		class->interfaces[idx].class_idx = be16toh(class->interfaces[idx].class_idx);
 		idx++;
@@ -85,44 +84,43 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				table_size_bytes += 4;
 				break;
 			case FLOAT: // Float: a 32-bit single-precision IEEE 754 floating-point number
+				item->label = "Float";
 				fread(&item->value.flt, sizeof(item->value.flt), 1, class_file.file);
 				item->value.flt = be32toh(item->value.flt);
 				table_size_bytes += 4;
-				item->label = "Float";
 				break;
 			case LONG: // Long: a signed 64-bit two's complement number in big-endian format (takes two slots in the constant pool table)
+				item->label = "Long";
 				fread(&item->value.lng.high, sizeof(item->value.lng.high), 1, class_file.file); // 4 bytes
 				fread(&item->value.lng.low, sizeof(item->value.lng.low), 1, class_file.file); // 4 bytes
 				item->value.lng.high = be32toh(item->value.lng.high);
 				item->value.lng.low = be32toh(item->value.lng.low);
-				//item->value.lng = ((long) be32toh(high) << 32) + be32toh(low);
-				item->label = "Long";
 				// 8-byte consts take 2 pool entries
 				++i;
 				table_size_bytes += 8;
 				break;
 			case DOUBLE: // Double: a 64-bit double-precision IEEE 754 floating-point number (takes two slots in the constant pool table)
+				item->label = "Double";
 				fread(&item->value.dbl.high, sizeof(item->value.dbl.high), 1, class_file.file); // 4 bytes
 				fread(&item->value.dbl.low, sizeof(item->value.dbl.low), 1, class_file.file); // 4 bytes
 				item->value.dbl.high = be32toh(item->value.dbl.high);
 				item->value.dbl.low = be32toh(item->value.dbl.low);
-				item->label = "Double";
 				// 8-byte consts take 2 pool entries
 				++i;
 				table_size_bytes += 8;
 				break;
 			case CLASS: // Class reference: an uint16 within the constant pool to a UTF-8 string containing the fully qualified class name
+				item->label = "Class ref";
 				fread(&r.class_idx, sizeof(r.class_idx), 1, class_file.file);
 				r.class_idx = be16toh(r.class_idx);
 				item->value.ref = r;
-				item->label = "Class ref";
 				table_size_bytes += 2;
 				break;
 			case STRING: // String reference: an uint16 within the constant pool to a UTF-8 string
+				item->label = "String ref";
 				fread(&r.class_idx, sizeof(r.class_idx), 1, class_file.file);
 				r.class_idx = be16toh(r.class_idx);
 				item->value.ref = r;
-				item->label = "String ref";
 				table_size_bytes += 2;
 				break;
 			case FIELD: // Field reference: two uint16 within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
@@ -132,12 +130,12 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				if (item->label == NULL) item->label = "Method ref";
 				/* FALL THROUGH TO INTERFACE_METHOD */
 			case INTERFACE_METHOD: // Interface method reference: 2 uint16 within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
+				if (item->label == NULL) item->label = "Interface method ref";
 				fread(&r.class_idx, sizeof(r.class_idx), 1, class_file.file);
 				fread(&r.name_idx, sizeof(r.name_idx), 1, class_file.file);
 				r.class_idx = be16toh(r.class_idx);
 				r.name_idx = be16toh(r.name_idx);
 				item->value.ref = r;
-				if (item->label == NULL) item->label = "Interface method ref";
 				table_size_bytes += 4;
 				break;
 			case NAME: // Name and type descriptor: 2 uint16 to UTF-8 strings, 1st representing a name (identifier), 2nd a specially encoded type descriptor
