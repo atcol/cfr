@@ -8,24 +8,18 @@
 
 Class *read_class(const ClassFile class_file) {
 	Class *class = (Class *) malloc(sizeof(Class));
-	uint16_t minor_version;
-	uint16_t major_version;
-	uint16_t const_pool_count;
 
-	fread(&minor_version, sizeof(uint16_t), 1, class_file.file);
-	fread(&major_version, sizeof(uint16_t), 1, class_file.file);
-	fread(&const_pool_count, sizeof(uint16_t), 1, class_file.file);
+	fread(&class->minor_version, sizeof(uint16_t), 1, class_file.file);
+	fread(&class->major_version, sizeof(uint16_t), 1, class_file.file);
+	fread(&class->const_pool_count, sizeof(uint16_t), 1, class_file.file);
 	
 	// convert the big endian ints to host equivalents
-	minor_version = be16toh(minor_version);
-	major_version = be16toh(major_version);
-	const_pool_count = be16toh(const_pool_count);
+	class->minor_version = be16toh(class->minor_version);
+	class->major_version = be16toh(class->major_version);
+	class->const_pool_count = be16toh(class->const_pool_count);
 
 	class->file_name = class_file.file_name;
-	class->minor_version = minor_version;
-	class->major_version = major_version;
-	class->const_pool_count = const_pool_count;
-	class->pool_size_bytes = parse_const_pool(class, const_pool_count, class_file);
+	class->pool_size_bytes = parse_const_pool(class, class->const_pool_count, class_file);
 	
 	if (class->pool_size_bytes == 0) {
 		return NULL;
