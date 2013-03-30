@@ -42,6 +42,7 @@ int main(int argc, char *args[]) {
 			print_class(stdout, class);
 		}
 
+		free((void *) class);
 		fclose(file);
 	}
 
