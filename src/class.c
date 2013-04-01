@@ -78,6 +78,16 @@ Class *read_class(const ClassFile class_file) {
 		idx++;
 	}
 
+	fread(&class->attributes_count, sizeof(class->attributes_count), 1, class_file.file);
+	class->attributes_count = be16toh(class->attributes_count);
+
+	class->attributes = calloc(class->attributes_count, sizeof(Ref));
+	idx = 0;
+	while (idx < class->attributes_count) {
+		fread(&class->attributes[idx].class_idx, sizeof(class->attributes[idx].class_idx), 1, class_file.file);
+		class->attributes[idx].class_idx = be16toh(class->attributes[idx].class_idx);
+		idx++;
+	}
 	return class;
 }
 
