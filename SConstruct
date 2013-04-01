@@ -1,5 +1,5 @@
-FLAGS = '-Wall -Wextra -pedantic -Wstrict-prototypes -Werror -std=c99 -D_BSD_SOURCE'
+FLAGS = '-g -Wall -Wextra -pedantic -Wstrict-prototypes -Werror -std=c99 -D_BSD_SOURCE'
 env = Environment(CCFLAGS=FLAGS)
-make = env.Program(target='cfr', source=['src/uthash.h', 'src/class.h', 'src/class.c', 'src/main.c'])
+make = env.Program(target='cfr', source=['src/class.h', 'src/class.c', 'src/main.c'])
 
 Default(make)
