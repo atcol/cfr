@@ -48,7 +48,7 @@ Class *read_class(const ClassFile class_file) {
 	fread(&class->interfaces_count, sizeof(class->interfaces_count), 1, class_file.file);
 	class->interfaces_count = be16toh(class->interfaces_count);
 
-	class->interfaces = malloc(sizeof(Ref) * class->interfaces_count);
+	class->interfaces = calloc(class->interfaces_count, sizeof(Ref));
 	int idx = 0;
 	while (idx < class->interfaces_count) {
 		fread(&class->interfaces[idx].class_idx, sizeof(class->interfaces[idx].class_idx), 1, class_file.file);
@@ -59,13 +59,22 @@ Class *read_class(const ClassFile class_file) {
 	fread(&class->fields_count, sizeof(class->fields_count), 1, class_file.file);
 	class->fields_count = be16toh(class->fields_count);
 
+	class->fields = calloc(class->fields_count, sizeof(Ref));
 	idx = 0;
 	while (idx < class->fields_count) {
-		printf("field");
-		Ref *r = (Ref *) malloc(sizeof(Ref));
-		class->fields[idx] = *r;
 		fread(&class->fields[idx].class_idx, sizeof(class->fields[idx].class_idx), 1, class_file.file);
 		class->fields[idx].class_idx = be16toh(class->fields[idx].class_idx);
+		idx++;
+	}
+
+	fread(&class->methods_count, sizeof(class->methods_count), 1, class_file.file);
+	class->methods_count = be16toh(class->methods_count);
+
+	class->methods = calloc(class->methods_count, sizeof(Ref));
+	idx = 0;
+	while (idx < class->methods_count) {
+		fread(&class->methods[idx].class_idx, sizeof(class->methods[idx].class_idx), 1, class_file.file);
+		class->methods[idx].class_idx = be16toh(class->methods[idx].class_idx);
 		idx++;
 	}
 
@@ -78,8 +87,8 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 	int i;
 	char tag_byte;
 	Ref r;
-	class->items = malloc(sizeof(Item) * MAX_ITEMS);
 
+	class->items = calloc(MAX_ITEMS, sizeof(Class));
 	for (i = 1; i <= MAX_ITEMS; i++) {
 		fread(&tag_byte, sizeof(char), 1, class_file.file);
 		if (tag_byte < MIN_CPOOL_TAG || tag_byte > MAX_CPOOL_TAG) {
@@ -87,7 +96,9 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 			table_size_bytes = 0;
 			break; // fail fast
 		}
-		Item *item = &class->items[i - 1];
+
+		uint16_t ptr_idx = i - 1;
+		Item *item = class->items + ptr_idx;
 		item->tag = tag_byte;
 		// Populate item based on tag_byte
 		switch (tag_byte) {
@@ -151,10 +162,10 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				item->label = "Field ref";
 				/* FALL THROUGH TO METHOD */
 			case METHOD: // Method reference: two uint16s within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
-				if (item->label == NULL) item->label = "Method ref";
+				if (!item->label) item->label = "Method ref";
 				/* FALL THROUGH TO INTERFACE_METHOD */
 			case INTERFACE_METHOD: // Interface method reference: 2 uint16 within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
-				if (item->label == NULL) item->label = "Interface method ref";
+				if (!item->label) item->label = "Interface method ref";
 				fread(&r.class_idx, sizeof(r.class_idx), 1, class_file.file);
 				fread(&r.name_idx, sizeof(r.name_idx), 1, class_file.file);
 				r.class_idx = be16toh(r.class_idx);
@@ -296,5 +307,16 @@ void print_class(FILE *stream, const Class *class) {
 	fprintf(stream, "Printing %u methods...\n", class->methods_count);
 	i = 0;
 	if (class->methods_count > 0) {
+		Ref *method = class->methods;
+		uint16_t idx = 0;
+		while (idx < class->methods_count) {
+			printf("Class is %u\n", method->class_idx);
+			Item *cl = get_item(class, method->class_idx);
+			printf("Name is %u\n", cl->value.ref.class_idx);
+			Item *class_name = get_item(class, cl->value.ref.class_idx);
+			fprintf(stream, "Method: %s\n", class_name->value.string.value);
+			idx++;
+			method = class->methods + idx;
+		}
 	}
 }
