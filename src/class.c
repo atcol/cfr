@@ -64,6 +64,8 @@ Class *read_class(const ClassFile class_file) {
 	while (idx < class->fields_count) {
 		fread(&class->fields[idx].class_idx, sizeof(class->fields[idx].class_idx), 1, class_file.file);
 		class->fields[idx].class_idx = be16toh(class->fields[idx].class_idx);
+		fread(&class->fields[idx].name_idx, sizeof(class->fields[idx].name_idx), 1, class_file.file);
+		class->fields[idx].name_idx = be16toh(class->fields[idx].name_idx);
 		idx++;
 	}
 
@@ -308,7 +310,8 @@ void print_class(FILE *stream, const Class *class) {
 		while (idx < class->fields_count) {
 			Item *cl = get_item(class, field->class_idx);
 			Item *class_name = get_item(class, cl->value.ref.class_idx);
-			fprintf(stream, "Field: %s\n", class_name->value.string.value);
+			Item *type = get_item(class, cl->value.ref.name_idx);
+			fprintf(stream, "Field: %s (%s)\n", class_name->value.string.value, type->value.string.value);
 			idx++;
 			field = class->fields + idx;
 		}
@@ -320,11 +323,10 @@ void print_class(FILE *stream, const Class *class) {
 		Ref *method = class->methods;
 		uint16_t idx = 0;
 		while (idx < class->methods_count) {
-			printf("Class is %u\n", method->class_idx);
-			Item *cl = get_item(class, method->class_idx);
-			printf("Name is %u\n", cl->value.ref.class_idx);
-			Item *class_name = get_item(class, cl->value.ref.class_idx);
-			fprintf(stream, "Method: %s\n", class_name->value.string.value);
+			Item *cl = get_item(class, method->class_idx); // the class cp item
+			Item *class_name = get_item(class, cl->value.ref.class_idx); // the class 
+			Item *type_name = get_item(class, cl->value.ref.name_idx);
+			printf("Item %u %u Name & Type = %s.%s\n", class_name->tag, type_name->tag, class_name->value.string.value, type_name->value.string.value);
 			idx++;
 			method = class->methods + idx;
 		}
