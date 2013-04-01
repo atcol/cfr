@@ -56,6 +56,19 @@ Class *read_class(const ClassFile class_file) {
 		idx++;
 	}
 
+	fread(&class->fields_count, sizeof(class->fields_count), 1, class_file.file);
+	class->fields_count = be16toh(class->fields_count);
+
+	idx = 0;
+	while (idx < class->fields_count) {
+		printf("field");
+		Ref *r = (Ref *) malloc(sizeof(Ref));
+		class->fields[idx] = *r;
+		fread(&class->fields[idx].class_idx, sizeof(class->fields[idx].class_idx), 1, class_file.file);
+		class->fields[idx].class_idx = be16toh(class->fields[idx].class_idx);
+		idx++;
+	}
+
 	return class;
 }
 
@@ -74,7 +87,7 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 			table_size_bytes = 0;
 			break; // fail fast
 		}
-		Item *item = (Item *) malloc(sizeof(Item));
+		Item *item = &class->items[i - 1];
 		item->tag = tag_byte;
 		// Populate item based on tag_byte
 		switch (tag_byte) {
@@ -235,9 +248,9 @@ void print_class(FILE *stream, const Class *class) {
 			fprintf(stream, "%u\n", s->value.ref.class_idx);
 		} else if(s->tag == FIELD || s->tag == METHOD || s->tag == INTERFACE_METHOD || s->tag == NAME) {
 			fprintf(stream, "%u.%u\n", s->value.ref.class_idx, s->value.ref.name_idx);
-		} else {
-			fprintf(stream, "Don't know how to print item # %d of type %d\n", i, s->tag);
-		}
+		} //else {
+		//	fprintf(stream, "Don't know how to print item # %d of type %d\n", i, s->tag);
+		//}
 		i++;
 	}
 
@@ -266,13 +279,22 @@ void print_class(FILE *stream, const Class *class) {
 		}
 	}
 
-	fprintf(stream, "Printing %u methods...\n", class->methods_count);
-	i = 0;
-	if (class->methods_count > 0) {
-	}
-
 	fprintf(stream, "Printing %d fields...\n", class->fields_count);
 
 	if (class->fields_count > 0) {
+		Ref *field = class->fields;
+		uint16_t idx = 0;
+		while (idx < class->fields_count) {
+			Item *cl = get_item(class, field->class_idx);
+			Item *class_name = get_item(class, cl->value.ref.class_idx);
+			fprintf(stream, "Field: %s\n", class_name->value.string.value);
+			idx++;
+			field = class->fields + idx;
+		}
+	}
+
+	fprintf(stream, "Printing %u methods...\n", class->methods_count);
+	i = 0;
+	if (class->methods_count > 0) {
 	}
 }
