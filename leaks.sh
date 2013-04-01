@@ -1,2 +1,2 @@
 #!/bin/bash
-./build.sh && valgrind --leak-check=full ./cfr test/files/Test.class > cfr_leak_opt.log
+./build.sh && valgrind --leak-check=full --track-origins=yes ./cfr test/files/Test.class > cfr_leak_opt.log
