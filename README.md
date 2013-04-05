@@ -1,6 +1,6 @@
 # cfr
 
-Class File Reader - a Java class file parser
+Class File Reader - a Java class file parser written in C.
 
 ### Introduction
 
