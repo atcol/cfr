@@ -34,7 +34,7 @@ int main(int argc, char *args[]) {
 			file
 		};
 
-		const Class *class = read_class(class_file);
+		Class *class = read_class(class_file);
 		if (class == NULL) {
 			fprintf(stderr, "Parsing aborted; invalid class file contents: %s\n", class_file.file_name);
 		} else {
@@ -42,7 +42,7 @@ int main(int argc, char *args[]) {
 			print_class(stdout, class);
 		}
 
-		free((void *) class);
+		free(class);
 		fclose(file);
 	}
 
