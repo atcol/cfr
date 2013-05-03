@@ -77,6 +77,8 @@ Class *read_class(const ClassFile class_file) {
 	while (idx < class->methods_count) {
 		fread(&class->methods[idx].class_idx, sizeof(class->methods[idx].class_idx), 1, class_file.file);
 		class->methods[idx].class_idx = be16toh(class->methods[idx].class_idx);
+		fread(&class->methods[idx].name_idx, sizeof(class->methods[idx].name_idx), 1, class_file.file);
+		class->methods[idx].name_idx = be16toh(class->methods[idx].name_idx);
 		idx++;
 	}
 
@@ -244,6 +246,56 @@ long to_long(const Long lng) {
 	return ((long) be32toh(lng.high) << 32) + be32toh(lng.low);
 }
 
+char *tag_to_label(uint8_t tag) {
+	char *label;
+	switch (tag) {
+	case INTEGER:
+		label = "Integer";
+		break;
+	case FLOAT:
+		label = "";
+		break;
+	case LONG:
+		label = "";
+		break;
+	case DOUBLE:
+		label = "";
+		break;
+	case CLASS:
+		label = "";
+		break;
+	case STRING:
+		label = "";
+		break;
+	case FIELD:
+		label = "";
+		break;
+	case METHOD:
+		label = "";
+		break;
+	case INTERFACE_METHOD:
+		label = "";
+		break;
+	case NAME:
+		label = "";
+		break;
+	case METHOD_HANDLE:
+		label = "";
+		break;
+	case METHOD_TYPE:
+		label = "";
+		break;
+	case INVOKE_DYNAMIC:
+		label = "";
+		break;
+	default:
+		fprintf(stderr, "Unrecognised tag byte %u\n", tag);
+		return NULL;
+		break;
+	}
+	return label;
+}
+
 void print_class(FILE *stream, const Class *class) {
 	fprintf(stream, "File: %s\n", class->file_name);
 	fprintf(stream, "Minor number: %u \n", class->minor_version);
@@ -253,7 +305,7 @@ void print_class(FILE *stream, const Class *class) {
 	fprintf(stream, "Printing constant pool of %d items...\n", class->const_pool_count-1);
 
 	Item *s;
-	uint16_t i = 1; // constant pool indexes start at 1, get_item conerts to pointer index
+	uint16_t i = 1; // constant pool indexes start at 1, get_item converts to pointer index
 	while (i < class->const_pool_count) {
 		s = get_item(class, i);
 		fprintf(stream, "Item #%u %s: ", i, s->label);
@@ -320,13 +372,15 @@ void print_class(FILE *stream, const Class *class) {
 	fprintf(stream, "Printing %u methods...\n", class->methods_count);
 	i = 0;
 	if (class->methods_count > 0) {
-		Ref *method = class->methods;
+		Ref *method = class->methods; // the first method
 		uint16_t idx = 0;
 		while (idx < class->methods_count) {
+			printf("Class is %u\n", method->class_idx);
 			Item *cl = get_item(class, method->class_idx); // the class cp item
-			Item *class_name = get_item(class, cl->value.ref.class_idx); // the class 
-			Item *type_name = get_item(class, cl->value.ref.name_idx);
-			printf("Item %u %u Name & Type = %s.%s\n", class_name->tag, type_name->tag, class_name->value.string.value, type_name->value.string.value);
+			Item *class_name = get_item(class, cl->value.ref.class_idx); // the class's name
+			Item *type_name = get_item(class, cl->value.ref.name_idx); 
+			printf("Item %u %u\n", class_name->tag, type_name->tag);
+			printf("\tName & Type = %s.%s\n", class_name->value.string.value, type_name->value.string.value);
 			idx++;
 			method = class->methods + idx;
 		}
