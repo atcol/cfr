@@ -141,6 +141,9 @@ double to_double(const Double dbl);
 /* Convert the high and low bits of lng to a long type */
 long to_long(const Long lng);
 
+/* Convert tag byte to its string name/label */
+char *tag_to_label(uint8_t tag);
+
 /* Write the name and class stats/contents to the given stream. */
 void print_class(FILE *stream, const Class *class);
 
