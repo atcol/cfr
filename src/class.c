@@ -111,14 +111,15 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 			break; // fail fast
 		}
 
+		String s;
 		uint16_t ptr_idx = i - 1;
 		Item *item = class->items + ptr_idx;
 		item->tag = tag_byte;
+		item->label = tag_to_label(tag_byte);
+
 		// Populate item based on tag_byte
 		switch (tag_byte) {
 			case STRING_UTF8: // String prefixed by a uint16 indicating the number of bytes in the encoded string which immediately follows
-				item->label = "String";
-				String s;
 				fread(&s.length, sizeof(s.length), 1, class_file.file);
 				s.length = be16toh(s.length);
 				s.value = malloc(sizeof(char) * s.length);
@@ -127,19 +128,16 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				table_size_bytes += 2 + s.length;
 				break;
 			case INTEGER: // Integer: a signed 32-bit two's complement number in big-endian format
-				item->label = "Integer";
 				fread(&item->value.integer, sizeof(item->value.integer), 1, class_file.file);
 				item->value.integer = be32toh(item->value.integer);
 				table_size_bytes += 4;
 				break;
 			case FLOAT: // Float: a 32-bit single-precision IEEE 754 floating-point number
-				item->label = "Float";
 				fread(&item->value.flt, sizeof(item->value.flt), 1, class_file.file);
 				item->value.flt = be32toh(item->value.flt);
 				table_size_bytes += 4;
 				break;
 			case LONG: // Long: a signed 64-bit two's complement number in big-endian format (takes two slots in the constant pool table)
-				item->label = "Long";
 				fread(&item->value.lng.high, sizeof(item->value.lng.high), 1, class_file.file); // 4 bytes
 				fread(&item->value.lng.low, sizeof(item->value.lng.low), 1, class_file.file); // 4 bytes
 				item->value.lng.high = be32toh(item->value.lng.high);
@@ -149,7 +147,6 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				table_size_bytes += 8;
 				break;
 			case DOUBLE: // Double: a 64-bit double-precision IEEE 754 floating-point number (takes two slots in the constant pool table)
-				item->label = "Double";
 				fread(&item->value.dbl.high, sizeof(item->value.dbl.high), 1, class_file.file); // 4 bytes
 				fread(&item->value.dbl.low, sizeof(item->value.dbl.low), 1, class_file.file); // 4 bytes
 				item->value.dbl.high = be32toh(item->value.dbl.high);
@@ -159,27 +156,22 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				table_size_bytes += 8;
 				break;
 			case CLASS: // Class reference: an uint16 within the constant pool to a UTF-8 string containing the fully qualified class name
-				item->label = "Class ref";
 				fread(&r.class_idx, sizeof(r.class_idx), 1, class_file.file);
 				r.class_idx = be16toh(r.class_idx);
 				item->value.ref = r;
 				table_size_bytes += 2;
 				break;
 			case STRING: // String reference: an uint16 within the constant pool to a UTF-8 string
-				item->label = "String ref";
 				fread(&r.class_idx, sizeof(r.class_idx), 1, class_file.file);
 				r.class_idx = be16toh(r.class_idx);
 				item->value.ref = r;
 				table_size_bytes += 2;
 				break;
 			case FIELD: // Field reference: two uint16 within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
-				item->label = "Field ref";
 				/* FALL THROUGH TO METHOD */
 			case METHOD: // Method reference: two uint16s within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
-				if (!item->label) item->label = "Method ref";
 				/* FALL THROUGH TO INTERFACE_METHOD */
 			case INTERFACE_METHOD: // Interface method reference: 2 uint16 within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
-				if (!item->label) item->label = "Interface method ref";
 				fread(&r.class_idx, sizeof(r.class_idx), 1, class_file.file);
 				fread(&r.name_idx, sizeof(r.name_idx), 1, class_file.file);
 				r.class_idx = be16toh(r.class_idx);
@@ -193,7 +185,6 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				r.class_idx = be16toh(r.class_idx);
 				r.name_idx = be16toh(r.name_idx);
 				item->value.ref = r;
-				if (item->label == NULL) item->label = "Name ref";
 				table_size_bytes += 4;
 				break;
 			default:
@@ -249,44 +240,47 @@ long to_long(const Long lng) {
 char *tag_to_label(uint8_t tag) {
 	char *label;
 	switch (tag) {
+	case STRING_UTF8:
+		label = "String_UTF8";
+		break;
 	case INTEGER:
 		label = "Integer";
 		break;
 	case FLOAT:
-		label = "";
+		label = "Float";
 		break;
 	case LONG:
-		label = "";
+		label = "Long";
 		break;
 	case DOUBLE:
-		label = "";
+		label = "Double";
 		break;
 	case CLASS:
-		label = "";
+		label = "Class";
 		break;
 	case STRING:
-		label = "";
+		label = "String";
 		break;
 	case FIELD:
-		label = "";
+		label = "Field";
 		break;
 	case METHOD:
-		label = "";
+		label = "Method";
 		break;
 	case INTERFACE_METHOD:
-		label = "";
+		label = "Interface Method";
 		break;
 	case NAME:
-		label = "";
+		label = "Name";
 		break;
 	case METHOD_HANDLE:
-		label = "";
+		label = "MethodHandle";
 		break;
 	case METHOD_TYPE:
-		label = "";
+		label = "MethodType";
 		break;
 	case INVOKE_DYNAMIC:
-		label = "";
+		label = "InvokeDynamic";
 		break;
 	default:
 		fprintf(stderr, "Unrecognised tag byte %u\n", tag);
