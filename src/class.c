@@ -369,12 +369,11 @@ void print_class(FILE *stream, const Class *class) {
 		Ref *method = class->methods; // the first method
 		uint16_t idx = 0;
 		while (idx < class->methods_count) {
-			printf("Class is %u\n", method->class_idx);
 			Item *cl = get_item(class, method->class_idx); // the class cp item
-			Item *class_name = get_item(class, cl->value.ref.class_idx); // the class's name
-			Item *type_name = get_item(class, cl->value.ref.name_idx); 
-			printf("Item %u %u\n", class_name->tag, type_name->tag);
-			printf("\tName & Type = %s.%s\n", class_name->value.string.value, type_name->value.string.value);
+			Item *type_it = get_item(class, cl->value.ref.name_idx); // the method's type cp item
+			Item *name = get_item(class, type_it->value.ref.class_idx); // the name ref
+			Item *desc = get_item(class, type_it->value.ref.name_idx); // the descriptor ref
+			printf("Method #%d: %s %s\n", idx + 1, desc->value.string.value, name->value.string.value);
 			idx++;
 			method = class->methods + idx;
 		}
