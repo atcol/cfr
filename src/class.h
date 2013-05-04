@@ -91,6 +91,14 @@ typedef struct {
 	uint32_t low;
 } Long;
 
+typedef struct {
+	uint16_t flags;
+	uint16_t name_idx;
+	uint16_t desc_idx;
+	uint16_t attr_count;
+	Attribute *attrs;
+} Method;
+
 /* Wraps references to an item in the constant pool */
 typedef struct {
 	uint16_t class_idx;
