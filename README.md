@@ -12,7 +12,7 @@ For fun.
 
 ### Build
 
-Run the `scons` command to build the source and produce a binary called "cfr".
+Run the `scons` command to build the source and produce a binary called "cfr". You can use `build.sh` which will clean and then compile the cfr binary.
 
 ### Usage
 
