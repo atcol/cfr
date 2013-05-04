@@ -237,58 +237,10 @@ long to_long(const Long lng) {
 	return ((long) be32toh(lng.high) << 32) + be32toh(lng.low);
 }
 
-char *tag_to_label(uint8_t tag) {
-	char *label;
-	switch (tag) {
-	case STRING_UTF8:
-		label = "String_UTF8";
-		break;
-	case INTEGER:
-		label = "Integer";
-		break;
-	case FLOAT:
-		label = "Float";
-		break;
-	case LONG:
-		label = "Long";
-		break;
-	case DOUBLE:
-		label = "Double";
-		break;
-	case CLASS:
-		label = "Class";
-		break;
-	case STRING:
-		label = "String";
-		break;
-	case FIELD:
-		label = "Field";
-		break;
-	case METHOD:
-		label = "Method";
-		break;
-	case INTERFACE_METHOD:
-		label = "Interface Method";
-		break;
-	case NAME:
-		label = "Name";
-		break;
-	case METHOD_HANDLE:
-		label = "MethodHandle";
-		break;
-	case METHOD_TYPE:
-		label = "MethodType";
-		break;
-	case INVOKE_DYNAMIC:
-		label = "InvokeDynamic";
-		break;
-	default:
-		fprintf(stderr, "Unrecognised tag byte %u\n", tag);
-		return NULL;
-		break;
-	}
-	return label;
-}
+//static inline char *tag_to_label(uint8_t tag) {
+	//char *label = CPool_strings[tag];
+	//return label;
+//}
 
 void print_class(FILE *stream, const Class *class) {
 	fprintf(stream, "File: %s\n", class->file_name);

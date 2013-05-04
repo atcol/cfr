@@ -14,7 +14,7 @@ enum RANGES {
 	MAX_CPOOL_TAG = 18
 };
 
-enum cpool_t {
+typedef enum {
 	STRING_UTF8      = 1, /* occupies 2+x bytes */
 	INTEGER          = 3, /* 32bit two's-compliment big endian int */
 	FLOAT            = 4, /* 32-bit single precision */
@@ -29,9 +29,30 @@ enum cpool_t {
 	METHOD_HANDLE 	 = 15,
 	METHOD_TYPE 	 = 16,
 	INVOKE_DYNAMIC 	 = 18
+} CPool_t;
+
+static char *CPool_strings[] = {
+	"Undefined", // 0
+	"String_UTF8",
+	"Undefined", // 2
+	"Integer",
+	"Float",
+	"Long",
+	"Double",
+	"Class",
+	"String",
+	"Field",
+	"Method",
+	"InterfaceMethod",
+	"Name",
+	"Undefined", // 13
+	"Undefined", // 14
+	"MethodHandle",
+	"MethodType",
+	"InvokeDynamic"
 };
 
-enum AccessFlags {
+typedef enum {
 	ACC_PUBLIC 		= 0x0001,
 	ACC_FINAL 		= 0x0010,
 	ACC_SUPER 		= 0x0020,
@@ -40,7 +61,7 @@ enum AccessFlags {
 	ACC_SYNTHETIC 	= 0x1000,
 	ACC_ANNOTATION 	= 0x2000,
 	ACC_ENUM 		= 0x4000
-};
+} AccessFlags;
 
 typedef struct {
 	char *info;
@@ -142,7 +163,9 @@ double to_double(const Double dbl);
 long to_long(const Long lng);
 
 /* Convert tag byte to its string name/label */
-char *tag_to_label(uint8_t tag);
+static inline char *tag_to_label(uint8_t tag) {
+	return CPool_strings[tag];
+}
 
 /* Write the name and class stats/contents to the given stream. */
 void print_class(FILE *stream, const Class *class);
