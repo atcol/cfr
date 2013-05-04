@@ -77,6 +77,8 @@ Class *read_class(const ClassFile class_file) {
 	while (idx < class->methods_count) {
 		fread(&class->methods[idx].class_idx, sizeof(class->methods[idx].class_idx), 1, class_file.file);
 		class->methods[idx].class_idx = be16toh(class->methods[idx].class_idx);
+		fread(&class->methods[idx].name_idx, sizeof(class->methods[idx].name_idx), 1, class_file.file);
+		class->methods[idx].name_idx = be16toh(class->methods[idx].name_idx);
 		idx++;
 	}
 
@@ -109,14 +111,15 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 			break; // fail fast
 		}
 
+		String s;
 		uint16_t ptr_idx = i - 1;
 		Item *item = class->items + ptr_idx;
 		item->tag = tag_byte;
+		item->label = tag_to_label(tag_byte);
+
 		// Populate item based on tag_byte
 		switch (tag_byte) {
 			case STRING_UTF8: // String prefixed by a uint16 indicating the number of bytes in the encoded string which immediately follows
-				item->label = "String";
-				String s;
 				fread(&s.length, sizeof(s.length), 1, class_file.file);
 				s.length = be16toh(s.length);
 				s.value = malloc(sizeof(char) * s.length);
@@ -125,19 +128,16 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				table_size_bytes += 2 + s.length;
 				break;
 			case INTEGER: // Integer: a signed 32-bit two's complement number in big-endian format
-				item->label = "Integer";
 				fread(&item->value.integer, sizeof(item->value.integer), 1, class_file.file);
 				item->value.integer = be32toh(item->value.integer);
 				table_size_bytes += 4;
 				break;
 			case FLOAT: // Float: a 32-bit single-precision IEEE 754 floating-point number
-				item->label = "Float";
 				fread(&item->value.flt, sizeof(item->value.flt), 1, class_file.file);
 				item->value.flt = be32toh(item->value.flt);
 				table_size_bytes += 4;
 				break;
 			case LONG: // Long: a signed 64-bit two's complement number in big-endian format (takes two slots in the constant pool table)
-				item->label = "Long";
 				fread(&item->value.lng.high, sizeof(item->value.lng.high), 1, class_file.file); // 4 bytes
 				fread(&item->value.lng.low, sizeof(item->value.lng.low), 1, class_file.file); // 4 bytes
 				item->value.lng.high = be32toh(item->value.lng.high);
@@ -147,7 +147,6 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				table_size_bytes += 8;
 				break;
 			case DOUBLE: // Double: a 64-bit double-precision IEEE 754 floating-point number (takes two slots in the constant pool table)
-				item->label = "Double";
 				fread(&item->value.dbl.high, sizeof(item->value.dbl.high), 1, class_file.file); // 4 bytes
 				fread(&item->value.dbl.low, sizeof(item->value.dbl.low), 1, class_file.file); // 4 bytes
 				item->value.dbl.high = be32toh(item->value.dbl.high);
@@ -157,27 +156,22 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				table_size_bytes += 8;
 				break;
 			case CLASS: // Class reference: an uint16 within the constant pool to a UTF-8 string containing the fully qualified class name
-				item->label = "Class ref";
 				fread(&r.class_idx, sizeof(r.class_idx), 1, class_file.file);
 				r.class_idx = be16toh(r.class_idx);
 				item->value.ref = r;
 				table_size_bytes += 2;
 				break;
 			case STRING: // String reference: an uint16 within the constant pool to a UTF-8 string
-				item->label = "String ref";
 				fread(&r.class_idx, sizeof(r.class_idx), 1, class_file.file);
 				r.class_idx = be16toh(r.class_idx);
 				item->value.ref = r;
 				table_size_bytes += 2;
 				break;
 			case FIELD: // Field reference: two uint16 within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
-				item->label = "Field ref";
 				/* FALL THROUGH TO METHOD */
 			case METHOD: // Method reference: two uint16s within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
-				if (!item->label) item->label = "Method ref";
 				/* FALL THROUGH TO INTERFACE_METHOD */
 			case INTERFACE_METHOD: // Interface method reference: 2 uint16 within the pool, 1st pointing to a Class reference, 2nd to a Name and Type descriptor
-				if (!item->label) item->label = "Interface method ref";
 				fread(&r.class_idx, sizeof(r.class_idx), 1, class_file.file);
 				fread(&r.name_idx, sizeof(r.name_idx), 1, class_file.file);
 				r.class_idx = be16toh(r.class_idx);
@@ -191,7 +185,6 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 				r.class_idx = be16toh(r.class_idx);
 				r.name_idx = be16toh(r.name_idx);
 				item->value.ref = r;
-				if (item->label == NULL) item->label = "Name ref";
 				table_size_bytes += 4;
 				break;
 			default:
@@ -244,6 +237,59 @@ long to_long(const Long lng) {
 	return ((long) be32toh(lng.high) << 32) + be32toh(lng.low);
 }
 
+char *tag_to_label(uint8_t tag) {
+	char *label;
+	switch (tag) {
+	case STRING_UTF8:
+		label = "String_UTF8";
+		break;
+	case INTEGER:
+		label = "Integer";
+		break;
+	case FLOAT:
+		label = "Float";
+		break;
+	case LONG:
+		label = "Long";
+		break;
+	case DOUBLE:
+		label = "Double";
+		break;
+	case CLASS:
+		label = "Class";
+		break;
+	case STRING:
+		label = "String";
+		break;
+	case FIELD:
+		label = "Field";
+		break;
+	case METHOD:
+		label = "Method";
+		break;
+	case INTERFACE_METHOD:
+		label = "Interface Method";
+		break;
+	case NAME:
+		label = "Name";
+		break;
+	case METHOD_HANDLE:
+		label = "MethodHandle";
+		break;
+	case METHOD_TYPE:
+		label = "MethodType";
+		break;
+	case INVOKE_DYNAMIC:
+		label = "InvokeDynamic";
+		break;
+	default:
+		fprintf(stderr, "Unrecognised tag byte %u\n", tag);
+		return NULL;
+		break;
+	}
+	return label;
+}
+
 void print_class(FILE *stream, const Class *class) {
 	fprintf(stream, "File: %s\n", class->file_name);
 	fprintf(stream, "Minor number: %u \n", class->minor_version);
@@ -253,7 +299,7 @@ void print_class(FILE *stream, const Class *class) {
 	fprintf(stream, "Printing constant pool of %d items...\n", class->const_pool_count-1);
 
 	Item *s;
-	uint16_t i = 1; // constant pool indexes start at 1, get_item conerts to pointer index
+	uint16_t i = 1; // constant pool indexes start at 1, get_item converts to pointer index
 	while (i < class->const_pool_count) {
 		s = get_item(class, i);
 		fprintf(stream, "Item #%u %s: ", i, s->label);
@@ -320,13 +366,14 @@ void print_class(FILE *stream, const Class *class) {
 	fprintf(stream, "Printing %u methods...\n", class->methods_count);
 	i = 0;
 	if (class->methods_count > 0) {
-		Ref *method = class->methods;
+		Ref *method = class->methods; // the first method
 		uint16_t idx = 0;
 		while (idx < class->methods_count) {
 			Item *cl = get_item(class, method->class_idx); // the class cp item
-			Item *class_name = get_item(class, cl->value.ref.class_idx); // the class 
-			Item *type_name = get_item(class, cl->value.ref.name_idx);
-			printf("Item %u %u Name & Type = %s.%s\n", class_name->tag, type_name->tag, class_name->value.string.value, type_name->value.string.value);
+			Item *type_it = get_item(class, cl->value.ref.name_idx); // the method's type cp item
+			Item *name = get_item(class, type_it->value.ref.class_idx); // the name ref
+			Item *desc = get_item(class, type_it->value.ref.name_idx); // the descriptor ref
+			printf("Method #%d: %s %s\n", idx + 1, desc->value.string.value, name->value.string.value);
 			idx++;
 			method = class->methods + idx;
 		}
