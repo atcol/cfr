@@ -115,7 +115,6 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 		uint16_t ptr_idx = i - 1;
 		Item *item = class->items + ptr_idx;
 		item->tag = tag_byte;
-		item->label = tag_to_label(tag_byte);
 
 		// Populate item based on tag_byte
 		switch (tag_byte) {
@@ -237,11 +236,6 @@ long to_long(const Long lng) {
 	return ((long) be32toh(lng.high) << 32) + be32toh(lng.low);
 }
 
-//static inline char *tag_to_label(uint8_t tag) {
-	//char *label = CPool_strings[tag];
-	//return label;
-//}
-
 void print_class(FILE *stream, const Class *class) {
 	fprintf(stream, "File: %s\n", class->file_name);
 	fprintf(stream, "Minor number: %u \n", class->minor_version);
@@ -254,7 +248,7 @@ void print_class(FILE *stream, const Class *class) {
 	uint16_t i = 1; // constant pool indexes start at 1, get_item converts to pointer index
 	while (i < class->const_pool_count) {
 		s = get_item(class, i);
-		fprintf(stream, "Item #%u %s: ", i, s->label);
+		fprintf(stream, "Item #%u %s: ", i, tag2str(s->tag));
 		if (s->tag == STRING_UTF8) {
 			fprintf(stream, "%s\n", s->value.string.value);
 		} else if (s->tag == INTEGER) {

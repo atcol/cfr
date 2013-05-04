@@ -104,7 +104,6 @@ typedef struct {
 
 typedef struct {
 	uint8_t tag; // the tag byte
-	char *label;
 	union {
 		String string;
 		float flt;
@@ -163,7 +162,7 @@ double to_double(const Double dbl);
 long to_long(const Long lng);
 
 /* Convert tag byte to its string name/label */
-static inline char *tag_to_label(uint8_t tag) {
+static inline char *tag2str(uint8_t tag) {
 	return CPool_strings[tag];
 }
 
