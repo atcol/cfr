@@ -84,7 +84,7 @@ typedef struct {
 typedef struct {
 	uint16_t access_flags;
 	uint16_t name_idx;
-	uint16_t descriptor_idx;
+	uint16_t desc_idx;
 	uint16_t attrs_count;
 	Attribute *attrs;
 } Field;
