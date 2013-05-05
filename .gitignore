@@ -23,4 +23,7 @@
 
 *.dblite
 
+# Java class files
+*.class
+
 cfr
