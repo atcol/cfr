@@ -21,6 +21,8 @@ typedef enum {
 } AccessFlags;
 
 typedef struct {
+	uint16_t name_idx;
+	uint32_t length;
 	char *info;
 } Attribute;
 
