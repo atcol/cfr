@@ -36,7 +36,7 @@ typedef struct {
 } Double;
 
 typedef struct {
-	uint16_t access_flags;
+	uint16_t flags;
 	uint16_t name_idx;
 	uint16_t desc_idx;
 	uint16_t attrs_count;
@@ -87,7 +87,7 @@ typedef struct {
 	uint16_t const_pool_count;
 	uint32_t pool_size_bytes;
 	Item *items;
-	uint16_t access_flags;
+	uint16_t flags;
 	uint16_t this_class;
 	uint16_t super_class;
 	uint16_t interfaces_count;
