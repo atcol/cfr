@@ -41,8 +41,8 @@ Class *read_class(const ClassFile class_file) {
 		return NULL;
 	}
 
-	fread(&class->access_flags, sizeof(class->access_flags), 1, class_file.file);
-	class->access_flags = be16toh(class->access_flags);
+	fread(&class->flags, sizeof(class->flags), 1, class_file.file);
+	class->flags = be16toh(class->flags);
 
 	fread(&class->this_class, sizeof(class->this_class), 1, class_file.file);
 	class->this_class = be16toh(class->this_class);
@@ -67,7 +67,7 @@ Class *read_class(const ClassFile class_file) {
 	class->fields = calloc(class->fields_count, sizeof(Field));
 	idx = 0;
 	while (idx < class->fields_count) {
-		fread(&class->fields[idx].access_flags, sizeof(u2), 1, class_file.file);
+		fread(&class->fields[idx].flags, sizeof(u2), 1, class_file.file);
 		fread(&class->fields[idx].name_idx, sizeof(u2), 1, class_file.file);
 		fread(&class->fields[idx].desc_idx, sizeof(u2), 1, class_file.file);
 		fread(&class->fields[idx].attrs_count, sizeof(u2), 1, class_file.file);
@@ -80,13 +80,17 @@ Class *read_class(const ClassFile class_file) {
 	fread(&class->methods_count, sizeof(class->methods_count), 1, class_file.file);
 	class->methods_count = be16toh(class->methods_count);
 
-	class->methods = calloc(class->methods_count, sizeof(Ref));
+	class->methods = calloc(class->methods_count, sizeof(Method));
 	idx = 0;
 	while (idx < class->methods_count) {
-		//fread(&class->methods[idx].class_idx, sizeof(class->methods[idx].class_idx), 1, class_file.file);
-		//class->methods[idx].class_idx = be16toh(class->methods[idx].class_idx);
-		//fread(&class->methods[idx].name_idx, sizeof(class->methods[idx].name_idx), 1, class_file.file);
-		//class->methods[idx].name_idx = be16toh(class->methods[idx].name_idx);
+		fread(&class->methods[idx].flags, sizeof(u2), 1, class_file.file);
+		fread(&class->methods[idx].name_idx, sizeof(u2), 1, class_file.file);
+		fread(&class->methods[idx].desc_idx, sizeof(u2), 1, class_file.file);
+		fread(&class->methods[idx].attrs_count, sizeof(u2), 1, class_file.file);
+		class->methods[idx].name_idx = be16toh(class->methods[idx].name_idx);
+		class->methods[idx].desc_idx = be16toh(class->methods[idx].desc_idx);
+		class->methods[idx].attrs_count = be16toh(class->methods[idx].attrs_count);
+		//TODO read attributes!
 		idx++;
 	}
 
@@ -304,7 +308,7 @@ void print_class(FILE *stream, const Class *class) {
 		i++;
 	}
 
-	fprintf(stream, "Access flags: %d\n", class->access_flags); //TODO use bitwise ops to for printing flags e.g. switch
+	fprintf(stream, "Access flags: %d\n", class->flags); //TODO use bitwise ops to for printing flags e.g. switch
 
 	Item *cl_str = get_class_string(class, class->this_class);
 	fprintf(stream, "This class: %s\n", cl_str->value.string.value);
@@ -346,11 +350,14 @@ void print_class(FILE *stream, const Class *class) {
 	fprintf(stream, "Printing %u methods...\n", class->methods_count);
 	i = 0;
 	if (class->methods_count > 0) {
-		//Method *method = class->methods; // the first method
-		//uint16_t idx = 0;
-		//while (idx < class->methods_count) {
-			//idx++;
-			//method = class->methods + idx;
-		//}
+		Method *method = class->methods;
+		uint16_t idx = 0;
+		while (idx < class->methods_count) {
+			Item *name = get_item(class, method->name_idx);
+			//Item *desc = get_item(class, method->desc_idx);
+			printf("%s\n", name->value.string.value);
+			idx++;
+			method = class->methods + idx;
+		}
 	}
 }
