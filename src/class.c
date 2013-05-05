@@ -65,15 +65,32 @@ Class *read_class(const ClassFile class_file) {
 	class->fields_count = be16toh(class->fields_count);
 
 	class->fields = calloc(class->fields_count, sizeof(Field));
+	Field *f;
 	idx = 0;
 	while (idx < class->fields_count) {
-		fread(&class->fields[idx].flags, sizeof(u2), 1, class_file.file);
-		fread(&class->fields[idx].name_idx, sizeof(u2), 1, class_file.file);
-		fread(&class->fields[idx].desc_idx, sizeof(u2), 1, class_file.file);
-		fread(&class->fields[idx].attrs_count, sizeof(u2), 1, class_file.file);
-		class->fields[idx].name_idx = be16toh(class->fields[idx].name_idx);
-		class->fields[idx].desc_idx = be16toh(class->fields[idx].desc_idx);
-		class->fields[idx].attrs_count = be16toh(class->fields[idx].attrs_count);
+		f = class->fields + idx;
+		fread(&f->flags, sizeof(u2), 1, class_file.file);
+		fread(&f->name_idx, sizeof(u2), 1, class_file.file);
+		fread(&f->desc_idx, sizeof(u2), 1, class_file.file);
+		fread(&f->attrs_count, sizeof(u2), 1, class_file.file);
+		f->name_idx = be16toh(f->name_idx);
+		f->desc_idx = be16toh(f->desc_idx);
+		f->attrs_count = be16toh(f->attrs_count);
+		f->attrs = calloc(f->attrs_count, sizeof(Attribute));
+
+		Attribute *attr;
+		int aidx = 0;
+		while (aidx++ < f->attrs_count) {
+			attr = f->attrs + aidx;
+			fread(&attr->name_idx, sizeof(u2), 1, class_file.file);
+			attr->name_idx = be16toh(attr->name_idx);
+			printf("name idx is %u\n", attr->name_idx);
+			fread(&attr->length, sizeof(char), 4, class_file.file);
+			//fread(&attr->length, sizeof(u4), 1, class_file.file);
+			printf("len is %d", attr->length);
+			fread(&attr->info, sizeof(char), attr->length, class_file.file);
+			printf("Read attr: %u,%d,%s\n", attr->name_idx, attr->length, attr->info);
+		}
 		idx++;
 	}
 
@@ -342,6 +359,18 @@ void print_class(FILE *stream, const Class *class) {
 			Item *name = get_item(class, field->name_idx);
 			Item *desc = get_item(class, field->desc_idx);
 			printf("%s %s\n", field2str(desc->value.string.value[0]), name->value.string.value);
+			Attribute at;
+			if (field->attrs_count == 0) {
+				fprintf(stream, "No attributes to print\n");
+			} else {
+				int aidx = 0;
+				while (aidx < field->attrs_count) {
+					at = field->attrs[aidx];
+					fprintf(stream, "\tAttribute length %d", at.length);
+					fprintf(stream, "\tAttribute: %s", at.info);
+					aidx++;
+				}
+			}
 			idx++;
 			field = class->fields + idx;
 		}
