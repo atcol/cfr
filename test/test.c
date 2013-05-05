@@ -30,6 +30,7 @@ void dbl() {
 	ok(1 == c->fields_count, "Fields count = 1");
 	Item *desc = get_item(c, c->fields[0].desc_idx);
 	ok(desc != NULL, "Field descriptor Item is in the constant pool");
+	ok(1 == c->fields[0].attrs_count, "Attribute count for field 0 is 1");
 	ok('D' == desc->value.string.value[0], "Field type tag is D");
 	free(c);
 }
