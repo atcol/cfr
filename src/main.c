@@ -1,6 +1,7 @@
 #include "class.h"
 #include <endian.h>
 #include <errno.h>
+#include "print.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
