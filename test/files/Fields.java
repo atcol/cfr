@@ -6,4 +6,7 @@ class Fields {
 	long l = 0l;
 	float f = 0f;
 	double d = 0d;
+	public static void main(final String[] args) {
+		System.out.println("Hello world");
+	}
 }
