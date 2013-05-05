@@ -1,4 +1,4 @@
-FLAGS = '-Wall -Wextra -pedantic -Wstrict-prototypes -std=c99 -D_BSD_SOURCE'
+FLAGS = '-Wall -Wextra -pedantic -Wstrict-prototypes -ggdb -std=gnu99 -D_BSD_SOURCE'
 env = Environment(CCFLAGS=FLAGS)
 
 test = env.Program(target='cfr-tests', source=['tap.c', 'test.c'])
