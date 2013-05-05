@@ -59,13 +59,16 @@ Class *read_class(const ClassFile class_file) {
 	fread(&class->fields_count, sizeof(class->fields_count), 1, class_file.file);
 	class->fields_count = be16toh(class->fields_count);
 
-	class->fields = calloc(class->fields_count, sizeof(Ref));
+	class->fields = calloc(class->fields_count, sizeof(Field));
 	idx = 0;
 	while (idx < class->fields_count) {
-		fread(&class->fields[idx].class_idx, sizeof(class->fields[idx].class_idx), 1, class_file.file);
-		class->fields[idx].class_idx = be16toh(class->fields[idx].class_idx);
-		fread(&class->fields[idx].name_idx, sizeof(class->fields[idx].name_idx), 1, class_file.file);
+		fread(&class->fields[idx].access_flags, sizeof(u2), 1, class_file.file);
+		fread(&class->fields[idx].name_idx, sizeof(u2), 1, class_file.file);
+		fread(&class->fields[idx].desc_idx, sizeof(u2), 1, class_file.file);
+		fread(&class->fields[idx].attrs_count, sizeof(u2), 1, class_file.file);
 		class->fields[idx].name_idx = be16toh(class->fields[idx].name_idx);
+		class->fields[idx].desc_idx = be16toh(class->fields[idx].desc_idx);
+		class->fields[idx].attrs_count = be16toh(class->fields[idx].attrs_count);
 		idx++;
 	}
 
@@ -75,10 +78,10 @@ Class *read_class(const ClassFile class_file) {
 	class->methods = calloc(class->methods_count, sizeof(Ref));
 	idx = 0;
 	while (idx < class->methods_count) {
-		fread(&class->methods[idx].class_idx, sizeof(class->methods[idx].class_idx), 1, class_file.file);
-		class->methods[idx].class_idx = be16toh(class->methods[idx].class_idx);
-		fread(&class->methods[idx].name_idx, sizeof(class->methods[idx].name_idx), 1, class_file.file);
-		class->methods[idx].name_idx = be16toh(class->methods[idx].name_idx);
+		//fread(&class->methods[idx].class_idx, sizeof(class->methods[idx].class_idx), 1, class_file.file);
+		//class->methods[idx].class_idx = be16toh(class->methods[idx].class_idx);
+		//fread(&class->methods[idx].name_idx, sizeof(class->methods[idx].name_idx), 1, class_file.file);
+		//class->methods[idx].name_idx = be16toh(class->methods[idx].name_idx);
 		idx++;
 	}
 
@@ -88,8 +91,8 @@ Class *read_class(const ClassFile class_file) {
 	class->attributes = calloc(class->attributes_count, sizeof(Ref));
 	idx = 0;
 	while (idx < class->attributes_count) {
-		fread(&class->attributes[idx].class_idx, sizeof(class->attributes[idx].class_idx), 1, class_file.file);
-		class->attributes[idx].class_idx = be16toh(class->attributes[idx].class_idx);
+		//fread(&class->attributes[idx].class_idx, sizeof(class->attributes[idx].class_idx), 1, class_file.file);
+		//class->attributes[idx].class_idx = be16toh(class->attributes[idx].class_idx);
 		idx++;
 	}
 	return class;
@@ -236,6 +239,33 @@ long to_long(const Long lng) {
 	return ((long) be32toh(lng.high) << 32) + be32toh(lng.low);
 }
 
+char *field2str(const char fld_type) {
+	switch(fld_type) {
+		case 'B': 
+			return "byte";
+		case 'C': 
+			return "char";
+		case 'D': 
+			return "double";
+		case 'F': 
+			return "float";
+		case 'I': 
+			return "int";
+		case 'J': 
+			return "long";
+		case 'L': 
+			return "reference";
+		case 'S': 
+			return "short";
+		case 'Z': 
+			return "boolean";
+		case '[': 
+			return "array";
+		default:
+			return "Undefined";
+	}
+}
+
 void print_class(FILE *stream, const Class *class) {
 	fprintf(stream, "File: %s\n", class->file_name);
 	fprintf(stream, "Minor number: %u \n", class->minor_version);
@@ -297,13 +327,12 @@ void print_class(FILE *stream, const Class *class) {
 	fprintf(stream, "Printing %d fields...\n", class->fields_count);
 
 	if (class->fields_count > 0) {
-		Ref *field = class->fields;
+		Field *field = class->fields;
 		uint16_t idx = 0;
 		while (idx < class->fields_count) {
-			Item *cl = get_item(class, field->class_idx);
-			Item *class_name = get_item(class, cl->value.ref.class_idx);
-			Item *type = get_item(class, cl->value.ref.name_idx);
-			fprintf(stream, "Field: %s (%s)\n", class_name->value.string.value, type->value.string.value);
+			Item *name = get_item(class, field->name_idx);
+			Item *desc = get_item(class, field->desc_idx);
+			printf("%s %s\n", field2str(desc->value.string.value[0]), name->value.string.value);
 			idx++;
 			field = class->fields + idx;
 		}
@@ -312,16 +341,11 @@ void print_class(FILE *stream, const Class *class) {
 	fprintf(stream, "Printing %u methods...\n", class->methods_count);
 	i = 0;
 	if (class->methods_count > 0) {
-		Ref *method = class->methods; // the first method
-		uint16_t idx = 0;
-		while (idx < class->methods_count) {
-			Item *cl = get_item(class, method->class_idx); // the class cp item
-			Item *type_it = get_item(class, cl->value.ref.name_idx); // the method's type cp item
-			Item *name = get_item(class, type_it->value.ref.class_idx); // the name ref
-			Item *desc = get_item(class, type_it->value.ref.name_idx); // the descriptor ref
-			printf("Method #%d: %s %s\n", idx + 1, desc->value.string.value, name->value.string.value);
-			idx++;
-			method = class->methods + idx;
-		}
+		//Method *method = class->methods; // the first method
+		//uint16_t idx = 0;
+		//while (idx < class->methods_count) {
+			//idx++;
+			//method = class->methods + idx;
+		//}
 	}
 }
