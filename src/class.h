@@ -6,8 +6,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#define u4 uint32_t
 #define u2 uint16_t
+#define u4 uint32_t
 
 typedef enum {
 	ACC_PUBLIC 		= 0x0001,
