@@ -14,6 +14,13 @@ For fun.
 
 Run the `scons` command to build the source and produce a binary called "cfr". You can use `build.sh` which will clean and then compile the cfr binary.
 
+### Testing
+This project uses libtap for its unit testing.
+
+The test suite is in the `test` directory, along with numerous test class files in `test/files/`. 
+
+To run the suite, change to the `test` directory and execute `scons -c; scons && ./cfr-tests` to run the suite.
+
 ### Usage
 
 `./cfr .class [.class ..]`
