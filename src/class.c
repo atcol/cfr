@@ -86,8 +86,9 @@ Class *read_class(const ClassFile class_file) {
 			fread(&attr->length, sizeof(u4), 1, class_file.file);
 			attr->name_idx = be16toh(attr->name_idx);
 			attr->length = be32toh(attr->length);
-			attr->info = calloc(attr->length, sizeof(char));
+			attr->info = calloc(attr->length + 1, sizeof(char));
 			fread(attr->info, sizeof(char), attr->length, class_file.file);
+			attr->info[attr->length] = '\0';
 		}
 		idx++;
 	}
@@ -96,16 +97,31 @@ Class *read_class(const ClassFile class_file) {
 	class->methods_count = be16toh(class->methods_count);
 
 	class->methods = calloc(class->methods_count, sizeof(Method));
+	Method *m;
 	idx = 0;
 	while (idx < class->methods_count) {
-		fread(&class->methods[idx].flags, sizeof(u2), 1, class_file.file);
-		fread(&class->methods[idx].name_idx, sizeof(u2), 1, class_file.file);
-		fread(&class->methods[idx].desc_idx, sizeof(u2), 1, class_file.file);
-		fread(&class->methods[idx].attrs_count, sizeof(u2), 1, class_file.file);
-		class->methods[idx].name_idx = be16toh(class->methods[idx].name_idx);
-		class->methods[idx].desc_idx = be16toh(class->methods[idx].desc_idx);
-		class->methods[idx].attrs_count = be16toh(class->methods[idx].attrs_count);
-		//TODO read attributes!
+		m = class->methods + idx;
+		fread(&m->flags, sizeof(u2), 1, class_file.file);
+		fread(&m->name_idx, sizeof(u2), 1, class_file.file);
+		fread(&m->desc_idx, sizeof(u2), 1, class_file.file);
+		fread(&m->attrs_count, sizeof(u2), 1, class_file.file);
+		m->name_idx = be16toh(m->name_idx);
+		m->desc_idx = be16toh(m->desc_idx);
+		m->attrs_count = be16toh(m->attrs_count);
+		m->attrs = calloc(m->attrs_count, sizeof(Attribute));
+
+		Attribute *attr;
+		int aidx = 0;
+		while (aidx++ < m->attrs_count) {
+			attr = m->attrs + aidx;
+			fread(&attr->name_idx, sizeof(u2), 1, class_file.file);
+			fread(&attr->length, sizeof(u4), 1, class_file.file);
+			attr->name_idx = be16toh(attr->name_idx);
+			attr->length = be32toh(attr->length);
+			attr->info = calloc(attr->length + 1, sizeof(char));
+			fread(attr->info, sizeof(char), attr->length, class_file.file);
+			attr->info[attr->length] = '\0';
+		}
 		idx++;
 	}
 
