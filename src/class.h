@@ -6,6 +6,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#define u4 uint32_t
+#define u2 uint16_t
+
 enum RANGES {
 	/* The smallest permitted value for a tag byte */
 	MIN_CPOOL_TAG = 1,
@@ -95,7 +98,7 @@ typedef struct {
 	uint16_t flags;
 	uint16_t name_idx;
 	uint16_t desc_idx;
-	uint16_t attr_count;
+	uint16_t attrs_count;
 	Attribute *attrs;
 } Method;
 
@@ -136,11 +139,11 @@ typedef struct {
 	uint16_t interfaces_count;
 	Ref *interfaces;
 	uint16_t fields_count;
-	Ref *fields;
+	Field *fields;
 	uint16_t methods_count;
-	Ref *methods;
+	Method *methods;
 	uint16_t attributes_count;
-	Ref *attributes;
+	Attribute *attributes;
 } Class;
 
 /* Delegate to read_class(ClassFile) */
