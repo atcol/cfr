@@ -27,9 +27,7 @@ void print_class(FILE *stream, const Class *class) {
 			fprintf(stream, "%u\n", s->value.ref.class_idx);
 		} else if(s->tag == FIELD || s->tag == METHOD || s->tag == INTERFACE_METHOD || s->tag == NAME) {
 			fprintf(stream, "%u.%u\n", s->value.ref.class_idx, s->value.ref.name_idx);
-		} //else {
-		//	fprintf(stream, "Don't know how to print item # %d of type %d\n", i, s->tag);
-		//}
+		} 
 		i++;
 	}
 
