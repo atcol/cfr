@@ -4,12 +4,11 @@
 #include <stdio.h>
 #include <string.h>
 
-//
-	// Always assert filename;
-	// 	const pool size 1 greater than number in pool
-	// 	interface count matches
-	// 	field count matches
-	//	method count matches
+// Always assert filename
+// const pool size 1 greater than number in pool
+// interface count matches
+// field count matches
+// method count matches
 	
 
 int main(void) {
@@ -20,6 +19,7 @@ int main(void) {
 
 
 void dbl() {
+	print("Double");
 	char *double_file = "./files/DoubleTest.class";
 	Class *c = read_class_from_file_name(double_file);
 
@@ -32,7 +32,14 @@ void dbl() {
 }
 
 void fields() {
-	printf("Fields test\n");
+	print("Fields");
 	Class *c = read_class_from_file_name("files/Fields.class");
 	ok(c->fields_count == 7, "Fields count == 7");
+	ok(c->methods_count == 2, "Methods count == 2, main() and constructor");
+}
+
+void print(const char *test_name) {
+	printf("#####################\n");
+	printf("Test: %s\n", test_name);
+	printf("#####################\n");
 }
