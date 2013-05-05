@@ -9,8 +9,6 @@
 #define u4 uint32_t
 #define u2 uint16_t
 
-
-
 typedef enum {
 	ACC_PUBLIC 		= 0x0001,
 	ACC_FINAL 		= 0x0010,
@@ -173,6 +171,9 @@ double to_double(const Double dbl);
 
 /* Convert the high and low bits of lng to a long type */
 long to_long(const Long lng);
+
+/* Convert the 2-byte field type to a friendly string e.g. "J" to "long" */
+char *field2str(const char fld_type);
 
 /* Convert tag byte to its string name/label */
 static inline char *tag2str(uint8_t tag) {
