@@ -10,7 +10,12 @@
 Class *read_class_from_file_name(char *file_name) {
 	FILE *file = fopen(file_name, "r");
 	if (!file) {
-		printf("Could not open '%s': %s\n", file_name, strerror(errno));
+		fprintf(stderr, "Could not open '%s': %s\n", file_name, strerror(errno));
+		return NULL;
+	}
+	// Check the file header for .class nature
+	if (!is_class(file)) {
+		fprintf(stderr, "Skipping '%s': not a valid class file\n", file_name);
 		return NULL;
 	}
 	const ClassFile cf = {file_name, file};
