@@ -28,6 +28,7 @@ void dbl() {
 	ok(0 == c->minor_version, "Major version is 0 (1.7.0_10)");
 	ok(51 == c->major_version, "Major version is 51 (1.7)");
 	ok(1 == c->fields_count, "Fields count = 1");
+	ok(0 == c->attributes_count, "Attributes count = 0");
 
 	const Item *desc = get_item(c, c->fields[0].desc_idx);
 	ok(desc != NULL, "Field descriptor Item is in the constant pool");
