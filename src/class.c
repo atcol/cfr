@@ -133,8 +133,14 @@ Class *read_class(const ClassFile class_file) {
 	class->attributes = calloc(class->attributes_count, sizeof(Ref));
 	idx = 0;
 	while (idx < class->attributes_count) {
-		//fread(&class->attributes[idx].class_idx, sizeof(class->attributes[idx].class_idx), 1, class_file.file);
-		//class->attributes[idx].class_idx = be16toh(class->attributes[idx].class_idx);
+		Attribute attr = class->attributes[idx];
+		fread(&attr.name_idx, sizeof(u2), 1, class_file.file);
+		fread(&attr.length, sizeof(u4), 1, class_file.file);
+		attr.name_idx = be16toh(attr.name_idx);
+		attr.length = be32toh(attr.length);
+		attr.info = calloc(attr.length + 1, sizeof(char));
+		fread(attr.info, sizeof(char), attr.length, class_file.file);
+		attr.info[attr.length] = '\0';
 		idx++;
 	}
 	return class;
