@@ -130,7 +130,7 @@ Class *read_class(const ClassFile class_file) {
 	fread(&class->attributes_count, sizeof(class->attributes_count), 1, class_file.file);
 	class->attributes_count = be16toh(class->attributes_count);
 
-	class->attributes = calloc(class->attributes_count, sizeof(Ref));
+	class->attributes = calloc(class->attributes_count, sizeof(Attribute));
 	idx = 0;
 	while (idx < class->attributes_count) {
 		Attribute attr = class->attributes[idx];
