@@ -10,6 +10,7 @@
 *.so
 *.so.*
 *.dylib
+*.gch
 
 # Executables
 *.exe
@@ -27,3 +28,4 @@
 *.class
 
 cfr
+cfr-tests
