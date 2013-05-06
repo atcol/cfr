@@ -70,6 +70,8 @@ void print_class(FILE *stream, const Class *class) {
 				int aidx = 0;
 				while (aidx < field->attrs_count) {
 					at = field->attrs[aidx];
+					Item *name = get_item(class, at.name_idx);
+					fprintf(stream, "\tAttribute name: %s\n", name->value.string.value);
 					fprintf(stream, "\tAttribute length %d\n", at.length);
 					fprintf(stream, "\tAttribute: %s\n", at.info);
 					aidx++;
@@ -94,6 +96,8 @@ void print_class(FILE *stream, const Class *class) {
 				int aidx = 0;
 				while (aidx < method->attrs_count) {
 					at = method->attrs[aidx];
+					Item *name = get_item(class, at.name_idx);
+					fprintf(stream, "Attribute name: %s", name->value.string.value);
 					fprintf(stream, "\tAttribute length %d\n", at.length);
 					fprintf(stream, "\tAttribute: %s\n", at.info);
 					aidx++;
