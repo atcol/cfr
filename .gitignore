@@ -19,6 +19,7 @@
 
 # Vim related
 *.swp
+*.log
 
 *.hexer
 
