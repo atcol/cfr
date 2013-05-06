@@ -97,7 +97,7 @@ void print_class(FILE *stream, const Class *class) {
 				while (aidx < method->attrs_count) {
 					at = method->attrs[aidx];
 					Item *name = get_item(class, at.name_idx);
-					fprintf(stream, "Attribute name: %s", name->value.string.value);
+					fprintf(stream, "\tAttribute name: %s", name->value.string.value);
 					fprintf(stream, "\tAttribute length %d\n", at.length);
 					fprintf(stream, "\tAttribute: %s\n", at.info);
 					aidx++;
