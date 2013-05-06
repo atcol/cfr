@@ -28,12 +28,15 @@ void dbl() {
 	ok(0 == c->minor_version, "Major version is 0 (1.7.0_10)");
 	ok(51 == c->major_version, "Major version is 51 (1.7)");
 	ok(1 == c->fields_count, "Fields count = 1");
+
 	const Item *desc = get_item(c, c->fields[0].desc_idx);
 	ok(desc != NULL, "Field descriptor Item is in the constant pool");
+	ok('D' == desc->value.string.value[0], "Field type tag is D");
+
 	ok(1 == c->fields[0].attrs_count, "Attribute count for field 0 is 1");
+
 	const Item *attr_name = get_item(c, c->fields[0].attrs[0].name_idx);
 	ok(strcmp("ConstantValue", attr_name->value.string.value) == 0, "First attribute in first field has name ConstantValue");
-	ok('D' == desc->value.string.value[0], "Field type tag is D");
 
 	const Method *method = c->methods;
 	const Item *m1name = get_item(c, c->methods[0].name_idx);
@@ -41,6 +44,12 @@ void dbl() {
 	ok(c->methods_count == 2, "Methods count == 2, main() and constructor");
 	ok(0 == strcmp("<init>", m1name->value.string.value), "First method's name is <init>");
 	ok(0 == strcmp("main", m2name->value.string.value), "Second method's name is main");
+	ok(1 == method->attrs_count, "init method attribute count is 1");
+
+	// Test that attribute #1 (index 0) has the name "Code"
+	const Item *m1attr1 = get_item(c, method->attrs[0].name_idx);
+	ok(0 == strcmp("Code", m1attr1->value.string.value), "Attribute #1 of method #1 has name Code");
+	ok(1 == c->methods[1].attrs_count, "main method attribute count is 1");
 	free(c);
 }
 
