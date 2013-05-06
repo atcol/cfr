@@ -87,8 +87,18 @@ void print_class(FILE *stream, const Class *class) {
 		uint16_t idx = 0;
 		while (idx < class->methods_count) {
 			Item *name = get_item(class, method->name_idx);
-			//Item *desc = get_item(class, method->desc_idx);
-			printf("%s\n", name->value.string.value);
+			Item *desc = get_item(class, method->desc_idx);
+			printf("%s %s\n", desc->value.string.value, name->value.string.value);
+			Attribute at;
+			if (method->attrs_count > 0) {
+				int aidx = 0;
+				while (aidx < method->attrs_count) {
+					at = method->attrs[aidx];
+					fprintf(stream, "\tAttribute length %d\n", at.length);
+					fprintf(stream, "\tAttribute: %s\n", at.info);
+					aidx++;
+				}
+			}
 			idx++;
 			method = class->methods + idx;
 		}
