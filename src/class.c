@@ -78,17 +78,9 @@ Class *read_class(const ClassFile class_file) {
 		f->attrs_count = be16toh(f->attrs_count);
 		f->attrs = calloc(f->attrs_count, sizeof(Attribute));
 
-		Attribute *attr;
 		int aidx = 0;
 		while (aidx < f->attrs_count) {
-			attr = f->attrs + aidx;
-			fread(&attr->name_idx, sizeof(u2), 1, class_file.file);
-			fread(&attr->length, sizeof(u4), 1, class_file.file);
-			attr->name_idx = be16toh(attr->name_idx);
-			attr->length = be32toh(attr->length);
-			attr->info = calloc(attr->length + 1, sizeof(char));
-			fread(attr->info, sizeof(char), attr->length, class_file.file);
-			attr->info[attr->length] = '\0';
+			parse_attribute(class_file, f->attrs + aidx);
 			aidx++;
 		}
 		idx++;
@@ -111,17 +103,9 @@ Class *read_class(const ClassFile class_file) {
 		m->attrs_count = be16toh(m->attrs_count);
 		m->attrs = calloc(m->attrs_count, sizeof(Attribute));
 
-		Attribute *attr;
 		int aidx = 0;
 		while (aidx < m->attrs_count) {
-			attr = m->attrs + aidx;
-			fread(&attr->name_idx, sizeof(u2), 1, class_file.file);
-			fread(&attr->length, sizeof(u4), 1, class_file.file);
-			attr->name_idx = be16toh(attr->name_idx);
-			attr->length = be32toh(attr->length);
-			attr->info = calloc(attr->length + 1, sizeof(char));
-			fread(attr->info, sizeof(char), attr->length, class_file.file);
-			attr->info[attr->length] = '\0';
+			parse_attribute(class_file, m->attrs + aidx);
 			aidx++;
 		}
 		idx++;
@@ -133,17 +117,20 @@ Class *read_class(const ClassFile class_file) {
 	class->attributes = calloc(class->attributes_count, sizeof(Attribute));
 	idx = 0;
 	while (idx < class->attributes_count) {
-		Attribute attr = class->attributes[idx];
-		fread(&attr.name_idx, sizeof(u2), 1, class_file.file);
-		fread(&attr.length, sizeof(u4), 1, class_file.file);
-		attr.name_idx = be16toh(attr.name_idx);
-		attr.length = be32toh(attr.length);
-		attr.info = calloc(attr.length + 1, sizeof(char));
-		fread(attr.info, sizeof(char), attr.length, class_file.file);
-		attr.info[attr.length] = '\0';
+		parse_attribute(class_file, class->attributes + idx);
 		idx++;
 	}
 	return class;
+}
+
+void parse_attribute(ClassFile class_file, Attribute *attr) {
+	fread(&attr->name_idx, sizeof(u2), 1, class_file.file);
+	fread(&attr->length, sizeof(u4), 1, class_file.file);
+	attr->name_idx = be16toh(attr->name_idx);
+	attr->length = be32toh(attr->length);
+	attr->info = calloc(attr->length + 1, sizeof(char));
+	fread(attr->info, sizeof(char), attr->length, class_file.file);
+	attr->info[attr->length] = '\0';
 }
 
 uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const ClassFile class_file) {
