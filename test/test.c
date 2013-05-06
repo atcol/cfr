@@ -14,6 +14,7 @@
 int main(void) {
 	dbl();
 	fields();
+	empty();
 	test_field2str();
 	return exit_status();
 }
@@ -28,6 +29,7 @@ void dbl() {
 	ok(0 == c->minor_version, "Major version is 0 (1.7.0_10)");
 	ok(51 == c->major_version, "Major version is 51 (1.7)");
 	ok(1 == c->fields_count, "Fields count = 1");
+	ok(31 == c->const_pool_count, "Constant pool count is 31"); // two for double type, plus # of items is 1 less than this member's value
 	ok(0 == c->attributes_count, "Attributes count = 0");
 
 	const Item *desc = get_item(c, c->fields[0].desc_idx);
@@ -51,6 +53,22 @@ void dbl() {
 	const Item *m1attr1 = get_item(c, method->attrs[0].name_idx);
 	ok(0 == strcmp("Code", m1attr1->value.string.value), "Attribute #1 of method #1 has name Code");
 	ok(1 == c->methods[1].attrs_count, "main method attribute count is 1");
+	free(c);
+}
+
+void empty() {
+	printh("Empty");
+	char *empty = "./files/Empty.class";
+	Class *c = read_class_from_file_name(empty);
+
+	ok(c != NULL, "C is not NULL");
+	ok(0 == (strcmp(c->file_name, empty)), "File name matches");
+	ok(0 == c->minor_version, "Major version is 0 (1.7.0_10)");
+	ok(51 == c->major_version, "Major version is 51 (1.7)");
+	ok(0 == c->fields_count, "Fields count = 0");
+	ok(10 == c->const_pool_count, "Constant pool count is 29");
+	ok(0 == c->attributes_count, "Attributes count = 0");
+
 	free(c);
 }
 
