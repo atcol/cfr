@@ -36,7 +36,11 @@ void dbl() {
 	ok('D' == desc->value.string.value[0], "Field type tag is D");
 
 	const Method *method = c->methods;
+	const Item *m1name = get_item(c, c->methods[0].name_idx);
+	const Item *m2name = get_item(c, c->methods[1].name_idx);
 	ok(c->methods_count == 2, "Methods count == 2, main() and constructor");
+	ok(0 == strcmp("<init>", m1name->value.string.value), "First method's name is <init>");
+	ok(0 == strcmp("main", m2name->value.string.value), "Second method's name is main");
 	free(c);
 }
 
