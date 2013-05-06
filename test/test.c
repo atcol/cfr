@@ -4,13 +4,6 @@
 #include <stdio.h>
 #include <string.h>
 
-// Always assert filename
-// const pool size 1 greater than number in pool
-// interface count matches
-// field count matches
-// method count matches
-	
-
 int main(void) {
 	dbl();
 	fields();
