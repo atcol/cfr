@@ -90,7 +90,7 @@ void print_class(FILE *stream, const Class *class) {
 		while (idx < class->methods_count) {
 			Item *name = get_item(class, method->name_idx);
 			Item *desc = get_item(class, method->desc_idx);
-			printf("%s %s\n", desc->value.string.value, name->value.string.value);
+			printf("%s %s\n", name->value.string.value, desc->value.string.value);
 			Attribute at;
 			if (method->attrs_count > 0) {
 				int aidx = 0;
