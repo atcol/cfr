@@ -59,7 +59,7 @@ void empty() {
 	ok(0 == c->minor_version, "Major version is 0 (1.7.0_10)");
 	ok(51 == c->major_version, "Major version is 51 (1.7)");
 	ok(0 == c->fields_count, "Fields count = 0");
-	ok(10 == c->const_pool_count, "Constant pool count is 29");
+	ok(10 == c->const_pool_count, "Constant pool count is 10");
 	ok(0 == c->attributes_count, "Attributes count = 0");
 
 	free(c);
