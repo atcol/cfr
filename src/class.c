@@ -24,17 +24,9 @@ Class *read_class_from_file_name(char *file_name) {
 
 Class *read_class(const ClassFile class_file) {
 	Class *class = (Class *) malloc(sizeof(Class));
-
-	fread(&class->minor_version, sizeof(uint16_t), 1, class_file.file);
-	fread(&class->major_version, sizeof(uint16_t), 1, class_file.file);
-	fread(&class->const_pool_count, sizeof(uint16_t), 1, class_file.file);
 	
-	// convert the big endian ints to host equivalents
-	class->minor_version = be16toh(class->minor_version);
-	class->major_version = be16toh(class->major_version);
-	class->const_pool_count = be16toh(class->const_pool_count);
+	parse_header(class_file, class);
 
-	class->file_name = class_file.file_name;
 	class->pool_size_bytes = parse_const_pool(class, class->const_pool_count, class_file);
 	
 	if (class->pool_size_bytes == 0) {
@@ -121,6 +113,18 @@ Class *read_class(const ClassFile class_file) {
 		idx++;
 	}
 	return class;
+}
+
+void parse_header(ClassFile class_file, Class *class) {
+	class->file_name = class_file.file_name;
+	fread(&class->minor_version, sizeof(uint16_t), 1, class_file.file);
+	fread(&class->major_version, sizeof(uint16_t), 1, class_file.file);
+	fread(&class->const_pool_count, sizeof(uint16_t), 1, class_file.file);
+	
+	// convert the big endian ints to host equivalents
+	class->minor_version = be16toh(class->minor_version);
+	class->major_version = be16toh(class->major_version);
+	class->const_pool_count = be16toh(class->const_pool_count);
 }
 
 void parse_attribute(ClassFile class_file, Attribute *attr) {
