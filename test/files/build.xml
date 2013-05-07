@@ -5,7 +5,8 @@
 	<property name="build" location="."/>
 
 	<target name="compile">
-		<javac srcdir="${src}" destdir="${build}"/>
+		<javac srcdir="${src}" destdir="${build}" target="1.7"/>
+		<!-- Hard-coded target so the tests can be consistent -->
 	</target>
 
 	<target name="clean" description="clean up" >
