@@ -24,18 +24,10 @@ Class *read_class_from_file_name(char *file_name) {
 
 Class *read_class(const ClassFile class_file) {
 	Class *class = (Class *) malloc(sizeof(Class));
-
-	fread(&class->minor_version, sizeof(uint16_t), 1, class_file.file);
-	fread(&class->major_version, sizeof(uint16_t), 1, class_file.file);
-	fread(&class->const_pool_count, sizeof(uint16_t), 1, class_file.file);
 	
-	// convert the big endian ints to host equivalents
-	class->minor_version = be16toh(class->minor_version);
-	class->major_version = be16toh(class->major_version);
-	class->const_pool_count = be16toh(class->const_pool_count);
+	parse_header(class_file, class);
 
-	class->file_name = class_file.file_name;
-	class->pool_size_bytes = parse_const_pool(class, class->const_pool_count, class_file);
+	parse_const_pool(class, class->const_pool_count, class_file);
 	
 	if (class->pool_size_bytes == 0) {
 		return NULL;
@@ -123,6 +115,18 @@ Class *read_class(const ClassFile class_file) {
 	return class;
 }
 
+void parse_header(ClassFile class_file, Class *class) {
+	class->file_name = class_file.file_name;
+	fread(&class->minor_version, sizeof(uint16_t), 1, class_file.file);
+	fread(&class->major_version, sizeof(uint16_t), 1, class_file.file);
+	fread(&class->const_pool_count, sizeof(uint16_t), 1, class_file.file);
+	
+	// convert the big endian ints to host equivalents
+	class->minor_version = be16toh(class->minor_version);
+	class->major_version = be16toh(class->major_version);
+	class->const_pool_count = be16toh(class->const_pool_count);
+}
+
 void parse_attribute(ClassFile class_file, Attribute *attr) {
 	fread(&attr->name_idx, sizeof(u2), 1, class_file.file);
 	fread(&attr->length, sizeof(u4), 1, class_file.file);
@@ -133,7 +137,7 @@ void parse_attribute(ClassFile class_file, Attribute *attr) {
 	attr->info[attr->length] = '\0';
 }
 
-uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const ClassFile class_file) {
+void parse_const_pool(Class *class, const uint16_t const_pool_count, const ClassFile class_file) {
 	const int MAX_ITEMS = const_pool_count - 1;
 	uint32_t table_size_bytes = 0;
 	int i;
@@ -231,7 +235,7 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 		}
 		if (item != NULL) class->items[i-1] = *item;
 	}
-	return table_size_bytes;
+	class->pool_size_bytes = table_size_bytes;
 }
 
 bool is_class(FILE *class_file) {
