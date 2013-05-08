@@ -1,14 +1,19 @@
-<project name="cfr-test" default="compile" basedir=".">
+<project name="cfr-test" default="rebuild" basedir=".">
 	<description>Builds the test source files</description>
 	<!-- set global properties for this build -->
 	<property name="src" location="."/>
 	<property name="build" location="."/>
 
 	<target name="compile">
-	<javac srcdir="${src}" destdir="${build}"/>
+		<javac srcdir="${src}" destdir="${build}" target="1.7"/>
+		<!-- Hard-coded target so the tests can be consistent -->
 	</target>
 
 	<target name="clean" description="clean up" >
-		<delete file="${build}/**.class"/>
+		<delete>
+			<fileset dir="${build}" includes="**/*.class" />
+		</delete>
 	</target>
+
+	<target name="rebuild" description="Clean and compile" depends="clean,compile" />
 </project>
