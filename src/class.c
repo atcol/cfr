@@ -27,7 +27,7 @@ Class *read_class(const ClassFile class_file) {
 	
 	parse_header(class_file, class);
 
-	class->pool_size_bytes = parse_const_pool(class, class->const_pool_count, class_file);
+	parse_const_pool(class, class->const_pool_count, class_file);
 	
 	if (class->pool_size_bytes == 0) {
 		return NULL;
@@ -137,7 +137,7 @@ void parse_attribute(ClassFile class_file, Attribute *attr) {
 	attr->info[attr->length] = '\0';
 }
 
-uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const ClassFile class_file) {
+void parse_const_pool(Class *class, const uint16_t const_pool_count, const ClassFile class_file) {
 	const int MAX_ITEMS = const_pool_count - 1;
 	uint32_t table_size_bytes = 0;
 	int i;
@@ -235,7 +235,7 @@ uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const C
 		}
 		if (item != NULL) class->items[i-1] = *item;
 	}
-	return table_size_bytes;
+	class->pool_size_bytes = table_size_bytes;
 }
 
 bool is_class(FILE *class_file) {

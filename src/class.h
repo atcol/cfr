@@ -154,13 +154,18 @@ Class *read_class_from_file_name(char *f);
 /* Parse the given class file into a Class struct. */
 Class *read_class(const ClassFile class_file);
 
-/* Parse the attribute properties from file into attr */
+/* Parse the attribute properties from file into attr. Assumes class_file.file is at offset relative to reading an attribute struct.
+ * See section 4.7 of the JVM spec. */
 void parse_attribute(ClassFile class_file, Attribute *attr);
 
 /* Parse the constant pool into class from class_file. ClassFile.file MUST be at the correct seek point i.e. byte offset 11.
  * The number of bytes read is returned. A return value of 0 signifies an invalid constant pool and class may have been changed.
+ * See section 4.4 of the JVM spec.
  */
-uint32_t parse_const_pool(Class *class, const uint16_t const_pool_count, const ClassFile class_file);
+void parse_const_pool(Class *class, const uint16_t const_pool_count, const ClassFile class_file);
+
+/* Parse the initial section of the given class_file up to and including the constant_pool_size section */
+void parse_header(ClassFile class_file, Class *class);
 
 /* Parse the initial section of the given class_file up to and including the constant_pool_size section */
 void parse_header(ClassFile class_file, Class *class);
