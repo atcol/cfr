@@ -18,7 +18,7 @@ void iok(int i, int j, char *msg) {
 	ok(i == j, msg);
 }
 
-/* Print msg, str1 and str2 before calling ok(0 == strcmp(str1, str2), msg); */
+/* Print write a comparison string into msg and call ok(0 == strcmp(str1, str2), msg); */
 void strok(char *str1, char *str2, char *msg) {
 	char *fmt_str = "%s - Comparison: '%s' == '%s'";
 	int str_len = strlen(msg) + strlen(fmt_str) + strlen(str1) + strlen(str2) + 1;
