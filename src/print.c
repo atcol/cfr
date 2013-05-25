@@ -31,7 +31,7 @@ void print_class(FILE *stream, const Class *class) {
 		i++;
 	}
 
-	fprintf(stream, "Access flags: %d\n", class->flags); //TODO use bitwise ops to for printing flags e.g. switch
+	fprintf(stream, "Access flags: %x\n", class->flags);
 
 	Item *cl_str = get_class_string(class, class->this_class);
 	fprintf(stream, "This class: %s\n", cl_str->value.string.value);
