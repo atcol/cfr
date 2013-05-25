@@ -18,10 +18,13 @@ void iok(int i, int j, char *msg) {
 	ok(i == j, msg);
 }
 
-/* Print str1 and str2 before calling ok(0 == strcmp(str1, str2), msg); */
+/* Print msg, str1 and str2 before calling ok(0 == strcmp(str1, str2), msg); */
 void strok(char *str1, char *str2, char *msg) {
-	printf("'%s' == '%s' \n", str1, str2);
-	ok(0 == strcmp(str1, str2), msg);
+	char *fmt_str = "%s - Comparison: '%s' == '%s'";
+	int str_len = strlen(msg) + strlen(fmt_str) + strlen(str1) + strlen(str2) + 1;
+	char *cmp_msg = malloc(sizeof(char) * str_len);
+	snprintf(cmp_msg, str_len, fmt_str, msg, str1, str2);
+	ok(0 == strcmp(str1, str2), cmp_msg);
 }
 
 void dbl() {
@@ -46,7 +49,7 @@ void dbl() {
 	const Item *attr_name = get_item(c, c->fields[0].attrs[0].name_idx);
 	ok(strcmp("ConstantValue", attr_name->value.string.value) == 0, "First attribute in first field has name ConstantValue");
 
-	// Constant pool content tests
+	// Constant pool content tests; could probably make a recursive function but this way is explicit & simpler
 	Item *i = get_item(c, 1);
 	ok(17 == i->value.ref.name_idx, " 1 = Methodref			   6");
 	ok(6 == i->value.ref.class_idx, " 1 = Methodref          17         //  java/lang/Object.\"<init>\":()V");
@@ -71,12 +74,23 @@ void dbl() {
 	i = get_item(c, 7);
 	ok(0 == strcmp("d", i->value.string.value), " 7 = Utf8               d");
 
-	//ok(, " 8 = Utf8               D");
-	//ok(, " 9 = Utf8               ConstantValue");
-	//ok(, " 10 = Double             1.0d");
-	//ok(, " 12 = Utf8               <init>");
-	//ok(, " 13 = Utf8               ()V");
-	//ok(, " 14 = Utf8               Code");
+	i = get_item(c, 8);
+	ok(0 == strcmp("D", i->value.string.value), " 8 = Utf8               D");
+
+	i = get_item(c, 9);
+	ok(0 == strcmp("ConstantValue", i->value.string.value), " 9 = Utf8               ConstantValue");
+
+	i = get_item(c, 10);
+	ok(1.0 == to_double(i->value.dbl), " 10 = Double             1.0d");
+
+	i = get_item(c, 12);
+	strok("<init>", i->value.string.value, " 12 = Utf8               <init>");
+
+	i = get_item(c, 13);
+	strok("()V", i->value.string.value, " 13 = Utf8               ()V");
+
+	i = get_item(c, 14);
+	strok("Code", i->value.string.value, " 14 = Utf8               Code");
 	//ok(, " 15 = Utf8               main");
 	//ok(, " 16 = Utf8               ([Ljava/lang/String;)V");
 	//ok(, " 17 = NameAndType        12:13        //  \"<init>\":()V");
