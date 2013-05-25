@@ -167,9 +167,6 @@ void parse_const_pool(Class *class, const uint16_t const_pool_count, const Class
 /* Parse the initial section of the given class_file up to and including the constant_pool_size section */
 void parse_header(ClassFile class_file, Class *class);
 
-/* Parse the initial section of the given class_file up to and including the constant_pool_size section */
-void parse_header(ClassFile class_file, Class *class);
-
 /* Return true if class_file's first four bytes match 0xcafebabe. */
 bool is_class(FILE *class_file);
 
