@@ -18,7 +18,7 @@ void iok(int i, int j, char *msg) {
 	ok(i == j, msg);
 }
 
-/* Print write a comparison string into msg and call ok(0 == strcmp(str1, str2), msg); */
+/* Write a comparison string into msg and call ok(0 == strcmp(str1, str2), msg); */
 void strok(char *str1, char *str2, char *msg) {
 	char *fmt_str = "%s - Comparison: '%s' == '%s'";
 	int str_len = strlen(msg) + strlen(fmt_str) + strlen(str1) + strlen(str2) + 1;
@@ -91,22 +91,57 @@ void dbl() {
 
 	i = get_item(c, 14);
 	strok("Code", i->value.string.value, " 14 = Utf8               Code");
-	//ok(, " 15 = Utf8               main");
-	//ok(, " 16 = Utf8               ([Ljava/lang/String;)V");
-	//ok(, " 17 = NameAndType        12:13        //  \"<init>\":()V");
-	//ok(, " 18 = Class              25            //  java/lang/System");
-	//ok(, " 19 = NameAndType        26:27        //  out:Ljava/io/PrintStream;");
-	//ok(, " 20 = Utf8               Hello world1.0");
-	//ok(, " 21 = Class              28            //  java/io/PrintStream");
-	//ok(, " 22 = NameAndType        29:30        //  println:(Ljava/lang/String;)V");
-	//ok(, " 23 = Utf8               DoubleTest");
-	//ok(, " 24 = Utf8               java/lang/Object");
-	//ok(, " 25 = Utf8               java/lang/System");
-	//ok(, " 26 = Utf8               out");
-	//ok(, " 27 = Utf8               Ljava/io/PrintStream;");
-	//ok(, " 28 = Utf8               java/io/PrintStream");
-	//ok(, " 29 = Utf8               println");
-	//ok(, " 30 = Utf8               (Ljava/lang/String;)V");
+
+	i = get_item(c, 15);
+	strok("main", i->value.string.value, " 15 = Utf8               main");
+
+	i = get_item(c, 16);
+	strok("([Ljava/lang/String;)V", i->value.string.value, " 16 = Utf8               ([Ljava/lang/String;)V");
+
+	i = get_item(c, 17);
+	ok(12 == i->value.ref.class_idx, " 17 = NameAndType        12          \"<init>\":()V");
+	ok(13 == i->value.ref.name_idx, " 17 = NameAndType        13          \"<init>\":()V");
+
+	i = get_item(c, 18);
+	ok(25 == i->value.ref.class_idx, " 18 = Class              25              java/lang/System");
+
+	i = get_item(c, 19);
+	ok(26 == i->value.ref.class_idx, " 19 = NameAndType        26          out:Ljava/io/PrintStream;");
+	ok(27 == i->value.ref.name_idx, " 19 = NameAndType        27          out:Ljava/io/PrintStream;");
+
+	i = get_item(c, 20);
+	strok("Hello world1.0", i->value.string.value, " 20 = Utf8               Hello world1.0");
+
+	i = get_item(c, 21);
+	ok(28 == i->value.ref.class_idx, " 21 = Class              28              java/io/PrintStream");
+
+	i = get_item(c, 22);
+	ok(29 == i->value.ref.class_idx, " 22 = NameAndType        29          println:(Ljava/lang/String;)V");
+	ok(30 == i->value.ref.name_idx, " 22 = NameAndType        30          println:(Ljava/lang/String;)V");
+
+	i = get_item(c, 23);
+	strok("DoubleTest", i->value.string.value, " 23 = Utf8               DoubleTest");
+
+	i = get_item(c, 24);
+	strok("java/lang/Object", i->value.string.value, " 24 = Utf8               java/lang/Object");
+
+	i = get_item(c, 25);
+	strok("java/lang/System", i->value.string.value, " 25 = Utf8               java/lang/System");
+
+	i = get_item(c, 26);
+	strok("out", i->value.string.value, " 26 = Utf8               out");
+
+	i = get_item(c, 27);
+	strok("Ljava/io/PrintStream;", i->value.string.value, " 27 = Utf8               Ljava/io/PrintStream;");
+
+	i = get_item(c, 28);
+	strok("java/io/PrintStream", i->value.string.value, " 28 = Utf8               java/io/PrintStream");
+
+	i = get_item(c, 29);
+	strok("println", i->value.string.value, " 29 = Utf8               println");
+
+	i = get_item(c, 30);
+	strok("(Ljava/lang/String;)V", i->value.string.value, " 30 = Utf8               (Ljava/lang/String;)V");
 
 	const Method *method = c->methods;
 	const Item *m1name = get_item(c, c->methods[0].name_idx);
