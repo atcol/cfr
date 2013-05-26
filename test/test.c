@@ -1,11 +1,13 @@
 #include "../src/class.h"
 #include "../src/class.c"
+#include <math.h>
 #include "tap.h"
 #include <stdio.h>
 #include <string.h>
 
 int main(void) {
 	dbl();
+	test_long();
 	fields();
 	empty();
 	test_field2str();
@@ -16,6 +18,15 @@ int main(void) {
 void iok(int i, int j, char *msg) {
 	printf("%d == %d \n", i, j, msg);
 	ok(i == j, msg);
+}
+
+/* Print i and j before calling ok(i == j, msg); */
+void lok(long i, long j, char *msg) {
+	char *fmt_str = "%s - Comparison: '%ld' == '%ld'";
+	int str_len = strlen(msg) + strlen(fmt_str) + 10 + 10 + 1;
+	char *cmp_msg = malloc(sizeof(char) * str_len);
+	snprintf(cmp_msg, str_len, fmt_str, msg, i, j);
+	ok(i == j, cmp_msg);
 }
 
 /* Write a comparison string into msg and call ok(0 == strcmp(str1, str2), msg); */
@@ -171,6 +182,26 @@ void empty() {
 	ok(10 == c->const_pool_count, "Constant pool count is 10");
 	ok(0 == c->attributes_count, "Attributes count = 0");
 
+	free(c);
+}
+
+void test_long() {
+	printh("Long");
+	char *fname = "files/Fields.class";
+	Class *c = read_class_from_file_name(fname);
+	ok(NULL != c, "C is not NULL");
+	ok(0 == (strcmp(c->file_name, fname)), "File name matches");
+	ok(0 == c->minor_version, "Major version is 0 (1.7.0_10)");
+	ok(51 == c->major_version, "Major version is 51 (1.7)");
+	iok(1, c->fields_count, "Fields count = 1");
+	iok(15, c->const_pool_count, "Constant pool count is 15");
+	iok(0, c->attributes_count, "Attributes count = 0");
+	
+	iok(10, c->items[1].tag, "Item #1 tag byte is 10");
+	strok(1, c->items[7].tag, "Item #7's tag byte is 1");
+	strok("ConstantValue", c->items[7].value.string.value, "Item #7 is 'ConstantValue' UTF8");
+	lok(1.0, to_long(c->items[8].value.lng), "Long constant pool item value is 1.0");
+	strok("<init>", c->items[10].value.string.value, "Item #10 is '<init>' UTF8");
 	free(c);
 }
 
